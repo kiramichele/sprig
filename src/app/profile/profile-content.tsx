@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import TopNav from '@/components/top-nav'
 import { createClient } from '@/lib/supabase/client'
@@ -29,6 +29,12 @@ export default function ProfileContent({ profile, interests, selectedIds }: Prop
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!message) return
+    const timer = window.setTimeout(() => setMessage(null), 4000)
+    return () => window.clearTimeout(timer)
+  }, [message])
 
   const groupedInterests = useMemo(() => {
     return interests.reduce<Record<string, Interest[]>>((groups, interest) => {
@@ -87,7 +93,6 @@ export default function ProfileContent({ profile, interests, selectedIds }: Prop
       }
 
       setMessage('profile updated successfully')
-      router.refresh()
     } catch (err) {
       setError('something went wrong while saving your profile')
     } finally {
