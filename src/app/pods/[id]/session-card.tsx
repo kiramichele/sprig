@@ -26,8 +26,12 @@ export default function SessionCard({ session, podId }: any) {
   const when = formatWhen(session.scheduled_for, nowMs)
   const duration = session.duration_minutes ? `${session.duration_minutes} min` : '30 min'
   const startsInMs = new Date(session.scheduled_for).getTime() - nowMs
-  // joinable when the call is scheduled and within 10 minutes either side of "now"
-  const joinable = session.status === 'scheduled' && Math.abs(startsInMs) <= 10 * 60 * 1000
+  // joinable from 10 min before the start until 10 min after — latecomers welcome.
+  // status flips 'scheduled' -> 'in_progress' once the first person joins, so
+  // both count as live (otherwise the button vanishes the moment the call starts).
+  const live = session.status === 'scheduled' || session.status === 'in_progress'
+  const started = startsInMs <= 0
+  const joinable = live && Math.abs(startsInMs) <= 10 * 60 * 1000
 
   return (
     <div className="chunky" style={{ background: 'white', borderRadius: 14, padding: 16 }}>
@@ -51,7 +55,7 @@ export default function SessionCard({ session, podId }: any) {
           className="chunky"
           style={{ display: 'inline-block', marginTop: 12, background: '#6BCB77', borderRadius: 12, padding: '8px 16px', fontWeight: 700, textDecoration: 'none', color: '#1F1A3D' }}
         >
-          join call →
+          {started ? 'join now →' : 'join call →'}
         </a>
       ) : null}
     </div>

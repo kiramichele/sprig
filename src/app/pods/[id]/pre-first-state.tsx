@@ -21,11 +21,21 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
   const emoji = pod?.primary_interest?.emoji || '🌱'
   const name = pod?.name || (pod?.primary_interest?.name ? `${pod.primary_interest.name} pod` : 'your pod')
 
+  // a session stays "joinable-or-upcoming" until 10 minutes past its start, so
+  // latecomers still see the join prompt (status flips to 'in_progress' once the
+  // first person joins, and scheduled_for moves into the past).
+  const LATE_GRACE_MS = 10 * 60 * 1000
   const upcoming = (sessions || [])
-    .filter((s: any) => s.status === 'scheduled' && new Date(s.scheduled_for).getTime() > now)
+    .filter(
+      (s: any) =>
+        (s.status === 'scheduled' || s.status === 'in_progress') &&
+        new Date(s.scheduled_for).getTime() > now - LATE_GRACE_MS
+    )
     .sort((a: any, b: any) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime())
   const next = upcoming[0] || null
-  const soon = !!next && new Date(next.scheduled_for).getTime() - now <= 24 * 60 * 60 * 1000
+  const startMs = next ? new Date(next.scheduled_for).getTime() : 0
+  const hasStarted = !!next && startMs <= now
+  const soon = !!next && startMs - now <= 24 * 60 * 60 * 1000
 
   return (
     <section>
@@ -34,7 +44,11 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
 
       {soon && next ? (
         <div className="chunky" style={{ background: '#FFD23F', borderRadius: 14, padding: 20, marginBottom: 8 }}>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>your first call is in {relative(next.scheduled_for, now)}</div>
+          <div style={{ fontWeight: 700, fontSize: 18 }}>
+            {hasStarted
+              ? 'your first call is happening now — hop in 🎥'
+              : `your first call is in ${relative(next.scheduled_for, now)}`}
+          </div>
           <a
             href={`/pods/${podId}/session/${next.id}`}
             className="chunky"
