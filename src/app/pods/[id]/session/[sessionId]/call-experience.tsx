@@ -1,0 +1,285 @@
+"use client"
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { DailyAudio, DailyProvider, useCallObject, useDaily } from '@daily-co/daily-react'
+import { createClient } from '@/lib/supabase/client'
+import type {
+  AdvanceAction,
+  JoinResponse,
+  PodSessionState,
+  SessionMember,
+} from '@/lib/session/types'
+import Lobby from './lobby'
+import InCall from './in-call'
+import WrapUp from './wrap-up'
+
+interface CurrentUser {
+  id: string
+  display_name: string
+  photo_url: string | null
+}
+
+interface Props {
+  sessionId: string
+  podId: string
+  podName: string
+  podEmoji: string
+  members: SessionMember[]
+  currentUser: CurrentUser
+}
+
+// Stable options object so useCallObject doesn't recreate the call each render.
+const CALL_OBJECT_OPTIONS = {}
+
+const GLOBAL_STYLE = `
+  .chunky { border:2.5px solid #1F1A3D; box-shadow:4px 4px 0 0 #1F1A3D; transition:all .12s ease; }
+  .chunky:hover { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #1F1A3D; }
+  .chunky:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #1F1A3D; }
+  .chunky:disabled { opacity:.55; cursor:not-allowed; }
+  .pod-h2 { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.16em; opacity:.55; margin:8px 0 10px; }
+`
+
+function CenteredMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        textAlign: 'center',
+        color: '#1F1A3D',
+      }}
+    >
+      <div style={{ maxWidth: 420 }}>{children}</div>
+    </div>
+  )
+}
+
+/**
+ * Top-level call component. Creates the Daily call object via `useCallObject`
+ * (the React-lifecycle-safe wrapper around DailyIframe.createCallObject) and
+ * provides it to the rest of the tree.
+ */
+export default function CallExperience(props: Props) {
+  const callObject = useCallObject(CALL_OBJECT_OPTIONS)
+
+  return (
+    <DailyProvider callObject={callObject}>
+      <style>{GLOBAL_STYLE}</style>
+      <CallRunner {...props} />
+    </DailyProvider>
+  )
+}
+
+function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser }: Props) {
+  const router = useRouter()
+  const daily = useDaily()
+
+  const [status, setStatus] = useState<'connecting' | 'ready' | 'error'>('connecting')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [joinData, setJoinData] = useState<JoinResponse | null>(null)
+  const [sessionState, setSessionState] = useState<PodSessionState | null>(null)
+  const [advancing, setAdvancing] = useState(false)
+  const [ending, setEnding] = useState(false)
+  const [endError, setEndError] = useState<string | null>(null)
+  const [retryKey, setRetryKey] = useState(0)
+  const endedHandled = useRef(false)
+
+  // Join: hit the join endpoint, then join the Daily room.
+  useEffect(() => {
+    if (!daily) return
+    let cancelled = false
+
+    async function start(call: NonNullable<typeof daily>) {
+      setStatus('connecting')
+      setErrorMsg(null)
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}/join`, { method: 'POST' })
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string }
+          throw new Error(body.error || `join failed (HTTP ${res.status})`)
+        }
+        const data = (await res.json()) as JoinResponse
+        if (cancelled) return
+        setJoinData(data)
+        setSessionState(data.session_state)
+
+        const meetingState = call.meetingState()
+        if (meetingState === 'new' || meetingState === 'left-meeting') {
+          await call.join({
+            url: data.room_url,
+            userName: currentUser.display_name,
+            userData: { profile_id: currentUser.id },
+          })
+        }
+        if (!cancelled) setStatus('ready')
+      } catch (err) {
+        if (!cancelled) {
+          setErrorMsg(err instanceof Error ? err.message : 'could not connect')
+          setStatus('error')
+        }
+      }
+    }
+
+    start(daily)
+    return () => {
+      cancelled = true
+    }
+  }, [daily, sessionId, currentUser.display_name, currentUser.id, retryKey])
+
+  // Realtime: pod_session_state updates keep every client in sync.
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`session-state-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'pod_session_state',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          setSessionState(payload.new as unknown as PodSessionState)
+        }
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [sessionId])
+
+  // Once the call has ended, send everyone to the pod's feedback page.
+  useEffect(() => {
+    if (sessionState?.call_phase === 'ended' && !endedHandled.current) {
+      endedHandled.current = true
+      router.push(`/pods/${podId}`)
+    }
+  }, [sessionState?.call_phase, podId, router])
+
+  // Advance the shared deck. Retries once silently before surfacing an error.
+  const advance = useCallback(
+    async (action: AdvanceAction) => {
+      setAdvancing(true)
+      try {
+        let lastError: unknown = null
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const res = await fetch(`/api/sessions/${sessionId}/advance`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action }),
+            })
+            if (!res.ok) {
+              const body = (await res.json().catch(() => ({}))) as { error?: string }
+              throw new Error(body.error || `advance failed (HTTP ${res.status})`)
+            }
+            const data = (await res.json()) as { session_state: PodSessionState }
+            setSessionState(data.session_state)
+            lastError = null
+            break
+          } catch (err) {
+            lastError = err
+          }
+        }
+        if (lastError) console.error('advance failed:', lastError)
+      } finally {
+        setAdvancing(false)
+      }
+    },
+    [sessionId]
+  )
+
+  const endCall = useCallback(async () => {
+    setEnding(true)
+    setEndError(null)
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/end`, { method: 'POST' })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(body.error || `end failed (HTTP ${res.status})`)
+      }
+      router.push(`/pods/${podId}`)
+    } catch (err) {
+      setEndError(err instanceof Error ? err.message : 'could not end the call')
+      setEnding(false)
+    }
+  }, [sessionId, podId, router])
+
+  if (status === 'error') {
+    return (
+      <CenteredMessage>
+        <div style={{ fontSize: 40, marginBottom: 8 }}>📡</div>
+        <h1 className="display" style={{ fontSize: 26, marginBottom: 8 }}>
+          having trouble connecting to video
+        </h1>
+        <p style={{ opacity: 0.8, marginBottom: 18, fontSize: 14 }}>
+          {errorMsg || 'something got in the way.'}
+        </p>
+        <button
+          onClick={() => setRetryKey((k) => k + 1)}
+          className="chunky"
+          style={{ background: '#FFD23F', borderRadius: 12, padding: '10px 22px', fontWeight: 700, color: '#1F1A3D' }}
+        >
+          try again
+        </button>
+      </CenteredMessage>
+    )
+  }
+
+  if (status === 'connecting' || !joinData || !sessionState) {
+    return (
+      <CenteredMessage>
+        <div style={{ fontSize: 40, marginBottom: 8 }}>🌱</div>
+        <p style={{ fontWeight: 700 }}>warming up the room…</p>
+      </CenteredMessage>
+    )
+  }
+
+  const phase = sessionState.call_phase
+
+  return (
+    <>
+      <DailyAudio />
+      {phase === 'lobby' ? (
+        <Lobby
+          members={members}
+          currentUserId={currentUser.id}
+          callStartedAt={sessionState.call_started_at}
+          onBegin={() => advance('begin')}
+          beginning={advancing}
+        />
+      ) : phase === 'in_progress' ? (
+        <InCall
+          members={members}
+          currentUserId={currentUser.id}
+          sessionState={sessionState}
+          rounds={joinData.prompt_rounds}
+          cards={joinData.prompt_cards}
+          advancing={advancing}
+          onAdvance={advance}
+          podName={podName}
+          podEmoji={podEmoji}
+        />
+      ) : phase === 'wrap_up' ? (
+        <WrapUp
+          sessionState={sessionState}
+          rounds={joinData.prompt_rounds}
+          cards={joinData.prompt_cards}
+          onEnd={endCall}
+          ending={ending}
+          endError={endError}
+        />
+      ) : (
+        <CenteredMessage>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>✨</div>
+          <p style={{ fontWeight: 700 }}>wrapping up…</p>
+        </CenteredMessage>
+      )}
+    </>
+  )
+}
