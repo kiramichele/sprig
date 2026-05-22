@@ -17,18 +17,24 @@ export default async function HomePage() {
     // fetch current status view
     const { data: status } = await sb.from('user_current_status').select('*').eq('profile_id', profile?.id).maybeSingle()
 
-    // fetch active pod memberships and related pods
+    // fetch pod memberships
     const { data: membershipRows } = await sb
       .from('pod_members')
-      .select('pod_id, pod:pods(*, primary_interest:interests(name))')
+      .select('pod_id')
       .eq('profile_id', profile?.id)
       .is('left_at', null)
 
-    const pods = (membershipRows || [])
-      .map((row: any) => row.pod)
-      .filter(Boolean)
+    const podIds = (membershipRows || []).map((row: any) => row.pod_id)
 
-    const podIds = pods.map((pod: any) => pod.id)
+    let pods: any[] = []
+    if (podIds.length) {
+      const { data } = await sb
+        .from('pods')
+        .select('*, primary_interest:interests(name)')
+        .in('id', podIds)
+        .in('status', ['forming', 'scheduled', 'active', 'continuing'])
+      pods = data || []
+    }
 
     // upcoming sessions
     let sessions: any[] = []
