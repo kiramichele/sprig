@@ -7,6 +7,7 @@
         "/^powershell -NoProfile -Command \"if \\(Test-Path \\.env\\.local\\) \\{ Rename-Item \\.env\\.local \\.env\\.local\\.bak -Force \\}; npm run build; if \\(Test-Path \\.env\\.local\\.bak\\) \\{ Rename-Item \\.env\\.local\\.bak \\.env\\.local -Force \\}\"$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "vercel": true
     }
 }
