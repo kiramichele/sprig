@@ -10,9 +10,11 @@ import JoinPoolModal from './join-pool-modal'
 export default function HomeContent(props: any) {
   const { profile, status, pods, sessions, availability } = props
   const [modalOpen, setModalOpen] = useState(false)
+  const safePods = Array.isArray(pods) ? pods : []
+  const safeAvailability = Array.isArray(availability) ? availability : []
 
-  const activePodCount = pods?.length || 0
-  const openAvailabilityCount = availability?.length || 0
+  const activePodCount = safePods.length
+  const openAvailabilityCount = safeAvailability.length
 
   return (
     <div>

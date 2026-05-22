@@ -32,7 +32,6 @@ export default async function HomePage() {
         .from('pods')
         .select('*, primary_interest:interests(name)')
         .in('id', podIds)
-        .in('status', ['forming', 'scheduled', 'active', 'continuing'])
       pods = data || []
     }
 

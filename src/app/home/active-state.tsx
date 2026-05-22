@@ -3,6 +3,8 @@
 export default function ActiveState({ profile, pods, sessions, onJoin }: any) {
   const soon = sessions && sessions[0]
 
+  const safePods = Array.isArray(pods) ? pods : []
+
   return (
     <section>
       <h1 className="display text-4xl mb-3">your pods 🌿</h1>
@@ -15,16 +17,16 @@ export default function ActiveState({ profile, pods, sessions, onJoin }: any) {
       ) : null}
 
       <div className="space-y-4">
-        {pods.map((p: any) => (
-          <div key={p.id} style={{ background: 'white', borderRadius: 8, padding: 12, border: '1px solid rgba(0,0,0,0.04)' }}>
+        {safePods.map((p: any) => (
+          <div key={String(p.id)} style={{ background: 'white', borderRadius: 8, padding: 12, border: '1px solid rgba(0,0,0,0.04)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-bold">{p.name || (p.primary_interest?.name ? `${p.primary_interest.name} pod` : 'pod')}</div>
-                <div className="text-sm opacity-70">{p.members_count || '—'} members</div>
+                <div className="font-bold">{String(p.name || (p.primary_interest?.name ? `${p.primary_interest.name} pod` : 'pod'))}</div>
+                <div className="text-sm opacity-70">{String(p.members_count || '—')} members</div>
               </div>
               <div>
-                <div className="text-sm">{p.status}</div>
-                <a href={`/pods/${p.id}`} className="block mt-2 text-sm">open pod</a>
+                <div className="text-sm">{String(p.status || '')}</div>
+                <a href={`/pods/${String(p.id)}`} className="block mt-2 text-sm">open pod</a>
               </div>
             </div>
           </div>
