@@ -51,19 +51,21 @@ function formatDateTime(iso: string): string {
 export default function AdminContent({ pool, pods, cronSecret }: Props) {
   const router = useRouter()
   const [running, setRunning] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [result, setResult] = useState<RunResponse | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [showWipeConfirm, setShowWipeConfirm] = useState(false)
   const [wiping, setWiping] = useState(false)
-  const [wipeMessage, setWipeMessage] = useState<string | null>(null)
 
   const secretMissing = !cronSecret
+  const busy = running || resetting || wiping
 
   async function runMatcher() {
     setRunning(true)
     setActionError(null)
     setResult(null)
-    setWipeMessage(null)
+    setActionMessage(null)
     try {
       const res = await fetch('/api/cron/match', {
         method: 'POST',
@@ -83,10 +85,41 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
     }
   }
 
+  async function resetTestPool() {
+    setResetting(true)
+    setActionError(null)
+    setResult(null)
+    setActionMessage(null)
+    try {
+      const res = await fetch('/api/admin/reset-test-pool', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cronSecret}` },
+      })
+      const json: {
+        ok?: boolean
+        error?: string
+        availabilities_reopened?: number
+        pods_deleted?: number
+      } = await res.json()
+      if (!res.ok || !json.ok) {
+        setActionError(json.error || `reset failed (HTTP ${res.status})`)
+      } else {
+        setActionMessage(
+          `reset done — re-opened ${json.availabilities_reopened ?? 0} availabilities, deleted ${json.pods_deleted ?? 0} matcher pods`
+        )
+        router.refresh()
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'request failed')
+    } finally {
+      setResetting(false)
+    }
+  }
+
   async function wipePool() {
     setWiping(true)
     setActionError(null)
-    setWipeMessage(null)
+    setActionMessage(null)
     try {
       const res = await fetch('/api/admin/wipe-pool', {
         method: 'POST',
@@ -96,7 +129,7 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
       if (!res.ok || !json.ok) {
         setActionError(json.error || `wipe failed (HTTP ${res.status})`)
       } else {
-        setWipeMessage(`canceled ${json.canceled ?? 0} availabilities`)
+        setActionMessage(`canceled ${json.canceled ?? 0} availabilities`)
         setShowWipeConfirm(false)
         router.refresh()
       }
@@ -133,7 +166,7 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
           style={{ background: '#FFE3EE', borderRadius: 12, padding: 16, marginTop: 20 }}
         >
           <strong>CRON_SECRET is not set.</strong> add it to <code>.env.local</code> and restart
-          the dev server — the run / wipe buttons need it.
+          the dev server — the run / reset / wipe buttons need it.
         </div>
       ) : null}
 
@@ -146,14 +179,29 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
         <p style={{ fontSize: 14, opacity: 0.85, marginBottom: 16 }}>
           forms pods from everyone currently in the pool. normally runs every 4 hours.
         </p>
-        <button
-          onClick={runMatcher}
-          disabled={running || secretMissing}
-          className="chunky"
-          style={{ background: 'white', borderRadius: 12, padding: '10px 20px', fontWeight: 700, fontSize: 15 }}
-        >
-          {running ? 'running…' : 'run matcher now'}
-        </button>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={runMatcher}
+            disabled={busy || secretMissing}
+            className="chunky"
+            style={{ background: 'white', borderRadius: 12, padding: '10px 20px', fontWeight: 700, fontSize: 15 }}
+          >
+            {running ? 'running…' : 'run matcher now'}
+          </button>
+          <button
+            onClick={resetTestPool}
+            disabled={busy || secretMissing}
+            className="chunky"
+            style={{ background: '#FFF6E5', borderRadius: 12, padding: '10px 20px', fontWeight: 700, fontSize: 15 }}
+          >
+            {resetting ? 'resetting…' : '↺ reset test pool'}
+          </button>
+        </div>
+        <p style={{ fontSize: 12, opacity: 0.7, marginTop: 10 }}>
+          reset re-opens every availability and deletes the pods previous runs created, so you can
+          run the matcher again from a clean slate.
+        </p>
 
         {result ? (
           <div
@@ -174,9 +222,9 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
             {actionError}
           </div>
         ) : null}
-        {wipeMessage ? (
+        {actionMessage ? (
           <div style={{ marginTop: 16, fontSize: 13, color: '#1F7A3D', fontWeight: 700 }}>
-            {wipeMessage}
+            {actionMessage}
           </div>
         ) : null}
       </section>
@@ -270,7 +318,7 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
         </p>
         <button
           onClick={() => setShowWipeConfirm(true)}
-          disabled={secretMissing}
+          disabled={busy || secretMissing}
           className="chunky"
           style={{ background: '#B00020', color: 'white', borderRadius: 12, padding: '8px 16px', fontWeight: 700 }}
         >
