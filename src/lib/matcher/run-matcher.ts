@@ -108,6 +108,7 @@ export async function runMatcher(): Promise<MatcherResult> {
     .select('id, profile_id, preferred_pod_size, cycles_attempted')
     .eq('status', 'open')
     .gt('available_until', nowIso)
+    .order('profile_id', { ascending: true }) // deterministic pool order
 
   if (poolError) {
     console.error('runMatcher: failed to read matching pool —', poolError)

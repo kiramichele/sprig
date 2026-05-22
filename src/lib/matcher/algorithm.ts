@@ -33,6 +33,9 @@ function pairKey(a: string, b: string): string {
  *
  * Returns the list of formed pods. Returns `[]` for an empty pool, a pool
  * smaller than 3, or when no pair clears the compatibility floor.
+ *
+ * Deterministic: the same pool and pair set always yield the same pods —
+ * every sort uses a total order, with ties broken by id.
  */
 export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
   if (pool.length < MIN_POD) return []
@@ -49,8 +52,14 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
     userPrefs.set(user.profile_id, user)
   }
 
-  // 3. highest scores first (the SQL returns them sorted; re-sort to be safe)
-  const sortedPairs = [...pairs].sort((a, b) => b.score - a.score)
+  // 3. highest scores first. Tie-break by ids so this is a *total* order —
+  //    the same pairs always sort the same way regardless of input order.
+  const sortedPairs = [...pairs].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score
+    if (a.user_a !== b.user_a) return a.user_a < b.user_a ? -1 : 1
+    if (a.user_b !== b.user_b) return a.user_b < b.user_b ? -1 : 1
+    return 0
+  })
 
   const matched = new Set<string>()
   const formedPods: Pod[] = []
@@ -100,8 +109,12 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
       candidates.push({ id, weakestLink: Math.min(withA, withB) })
     }
 
-    // strongest weakest-link first — protects against asymmetric matches
-    candidates.sort((x, y) => y.weakestLink - x.weakestLink)
+    // strongest weakest-link first — protects against asymmetric matches.
+    // Tie-break by id so the candidate order is a total order (deterministic).
+    candidates.sort((x, y) => {
+      if (y.weakestLink !== x.weakestLink) return y.weakestLink - x.weakestLink
+      return x.id < y.id ? -1 : x.id > y.id ? 1 : 0
+    })
 
     // grow the pod one member at a time
     for (const candidate of candidates) {
