@@ -11,6 +11,29 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
 
+  function getSignupErrorMessage(error: { message: string; status?: number } | null) {
+    if (!error) return null
+
+    if (error.status === 429) {
+      return 'Too many signup attempts. Please wait a few minutes and try again.'
+    }
+
+    const message = error.message.toLowerCase()
+    if (message.includes('already registered') || message.includes('already exists')) {
+      return 'This email is already registered. If you already have an account, sign in instead.'
+    }
+
+    if (message.includes('invalid email')) {
+      return 'Please enter a valid email address.'
+    }
+
+    if (message.includes('password should be at least') || message.includes('password must be at least')) {
+      return 'Password must be at least 8 characters.'
+    }
+
+    return error.message
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -32,7 +55,7 @@ export default function SignupPage() {
     })
 
     if (error) {
-      setError(error.message)
+      setError(getSignupErrorMessage(error))
       setLoading(false)
       return
     }

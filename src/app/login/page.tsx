@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
+
+  useEffect(() => {
+    const searchParams = new URL(window.location.href).searchParams
+    if (searchParams.get('error') === 'confirm') {
+      setInfo('Please confirm your email by clicking the link we sent, then sign in.')
+    }
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -84,6 +92,12 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
           </div>
+
+          {info && (
+            <div className="text-sm p-3 rounded-lg" style={{ background: '#E6F6FF', color: '#1F1A3D' }}>
+              {info}
+            </div>
+          )}
 
           {error && (
             <div className="text-sm p-3 rounded-lg" style={{ background: '#FFE3EE', color: '#1F1A3D' }}>
