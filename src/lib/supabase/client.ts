@@ -6,8 +6,11 @@ export function createClient() {
     throw new Error('Supabase browser client can only be created on the client')
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const normalizeEnv = (value: string | undefined) =>
+    value?.trim().replace(/^NEXT_PUBLIC_[A-Z_]+=\s*/, '')
+
+  const supabaseUrl = normalizeEnv(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const supabaseAnonKey = normalizeEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
