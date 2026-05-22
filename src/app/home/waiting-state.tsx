@@ -1,7 +1,42 @@
 "use client"
 
-export default function WaitingState({ profile, availability, onCancel, onJoin }: any) {
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+export default function WaitingState({ profile, availability, onJoin }: any) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const signal = (availability && availability[0]) || null
+
+  async function handleCancel() {
+    if (!signal) return
+    setLoading(true)
+    setError(null)
+
+    try {
+      const supabase = createClient()
+      const query = supabase.from('matching_availability').update({ status: 'canceled' })
+
+      if (signal.id) {
+        query.eq('id', signal.id)
+      } else {
+        query.eq('profile_id', profile?.id).eq('status', 'open')
+      }
+
+      const { error: cancelError } = await query
+      if (cancelError) {
+        setError('Could not cancel matching right now. Please try again.')
+      } else {
+        router.refresh()
+      }
+    } catch (err) {
+      setError('Could not cancel matching right now. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <section>
@@ -14,8 +49,11 @@ export default function WaitingState({ profile, availability, onCancel, onJoin }
           <div>matching on <strong>{(signal.preferred_interests && signal.preferred_interests.length) ? 'selected interests' : 'all your interests'}</strong></div>
           <div>preferred group size: <strong>{signal.preferred_pod_size || 4}</strong></div>
           <div className="mt-3">
-            <button onClick={onCancel} className="px-4 py-2 font-bold" style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12 }}>cancel matching</button>
+            <button onClick={handleCancel} disabled={loading} className="px-4 py-2 font-bold" style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12 }}>
+              {loading ? 'canceling…' : 'cancel matching'}
+            </button>
           </div>
+          {error ? <div className="mt-3 text-sm text-red-600">{error}</div> : null}
         </div>
       ) : null}
 
