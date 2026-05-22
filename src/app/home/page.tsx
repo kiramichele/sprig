@@ -1,22 +1,52 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import LogoutButton from './logout-button'
+import HomeContent from './home-content'
 
 export default async function HomePage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const sb: any = supabase
 
-  if (!user) redirect('/login')
+  try {
+    const { data: userData } = await sb.auth.getUser()
+    const user = (userData as any)?.user
+    if (!user) redirect('/login')
 
-  return (
-    <main className="min-h-screen p-8" style={{ background: '#FFF6E5', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Sans:wght@400;500;600;700&display=swap'); .display { font-family: 'Caprasimo', Georgia, serif; }`}</style>
-      <div className="max-w-2xl mx-auto">
-        <h1 className="display text-5xl mb-3">you&apos;re in 🌱</h1>
-        <p className="mb-2">signed in as <strong>{user.email}</strong></p>
-        <p className="mb-6 opacity-70 text-sm">home page coming soon — pod discovery, friend list, upcoming sessions.</p>
-        <LogoutButton />
-      </div>
-    </main>
-  )
+    // fetch profile
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single()
+
+    // fetch current status view
+    const { data: status } = await sb.from('user_current_status').select('*').eq('profile_id', profile?.id).maybeSingle()
+
+    // fetch pod memberships
+    const { data: memberships } = await sb.from('pod_members').select('pod_id').eq('profile_id', profile?.id).is('left_at', null)
+    const podIds = (memberships || []).map((m: any) => m.pod_id)
+
+    let pods = []
+    if (podIds.length) {
+      const { data } = await sb.from('pods').select('*, primary_interest:interests(name)').in('id', podIds)
+      pods = data || []
+    }
+
+    // upcoming sessions
+    let sessions: any[] = []
+    if (podIds.length) {
+      const now = new Date().toISOString()
+      const { data } = await sb.from('pod_sessions').select('*').in('pod_id', podIds).eq('status', 'scheduled').gt('scheduled_for', now).order('scheduled_for', { ascending: true }).limit(3)
+      sessions = data || []
+    }
+
+    // open availability
+    const now = new Date().toISOString()
+    const { data: availability } = await sb.from('matching_availability').select('*').eq('profile_id', profile?.id).eq('status', 'open').gt('available_until', now)
+
+    return (
+      <main className="min-h-screen" style={{ background: '#FFF6E5', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Sans:wght@400;500;600;700&display=swap'); .display { font-family: 'Caprasimo', Georgia, serif; }`}</style>
+        <HomeContent profile={profile} status={status} pods={pods} sessions={sessions} availability={availability} />
+      </main>
+    )
+  } catch (err) {
+    console.error('home page error', err)
+    redirect('/login')
+  }
 }
