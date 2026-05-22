@@ -13,6 +13,7 @@ export default function PodContent({
   currentMember,
   currentUserId,
   threadId,
+  pendingRequestCount,
 }: any) {
   const safeMembers = Array.isArray(members) ? members : []
   const safeSessions = Array.isArray(sessions) ? sessions : []
@@ -29,7 +30,7 @@ export default function PodContent({
 
   return (
     <div>
-      <TopNav profile={profile || { id: currentUserId }} />
+      <TopNav profile={profile || { id: currentUserId }} pendingRequestCount={pendingRequestCount} />
       <style>{`
         .chunky { border: 2.5px solid #1F1A3D; box-shadow: 4px 4px 0 0 #1F1A3D; transition: all 0.12s ease; }
         .chunky:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 0 #1F1A3D; }

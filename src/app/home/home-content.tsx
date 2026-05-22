@@ -8,7 +8,7 @@ import ActiveState from './active-state'
 import JoinPoolModal from './join-pool-modal'
 
 export default function HomeContent(props: any) {
-  const { profile, status, pods, sessions, availability } = props
+  const { profile, status, pods, sessions, availability, pendingRequestCount } = props
   const [modalOpen, setModalOpen] = useState(false)
   const safePods = Array.isArray(pods) ? pods : []
   const safeAvailability = Array.isArray(availability) ? availability : []
@@ -18,7 +18,7 @@ export default function HomeContent(props: any) {
 
   return (
     <div>
-      <TopNav profile={profile} />
+      <TopNav profile={profile} pendingRequestCount={pendingRequestCount} />
 
       <div className="max-w-4xl mx-auto p-8" style={{ background: '#FFF6E5' }}>
         {activePodCount > 0 ? (

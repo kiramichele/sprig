@@ -19,6 +19,13 @@ export default async function HomePage() {
     .single()
   if (profileError) console.error('home: profile query failed —', profileError)
 
+  // pending incoming friend requests, for the nav badge
+  const { count: pendingRequestCount } = await sb
+    .from('friendships')
+    .select('*', { count: 'exact', head: true })
+    .eq('addressee_id', user.id)
+    .eq('status', 'pending')
+
   // fetch current status view
   const { data: status, error: statusError } = await sb
     .from('user_current_status')
@@ -76,7 +83,7 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen" style={{ background: '#FFF6E5', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Sans:wght@400;500;600;700&display=swap'); .display { font-family: 'Caprasimo', Georgia, serif; }`}</style>
-      <HomeContent profile={profile} status={status} pods={pods} sessions={sessions} availability={availability} />
+      <HomeContent profile={profile} status={status} pods={pods} sessions={sessions} availability={availability} pendingRequestCount={pendingRequestCount ?? 0} />
     </main>
   )
 }

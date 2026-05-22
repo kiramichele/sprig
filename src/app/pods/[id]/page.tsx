@@ -19,6 +19,13 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
 
   const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single()
 
+  // pending incoming friend requests, for the nav badge
+  const { count: pendingRequestCount } = await sb
+    .from('friendships')
+    .select('*', { count: 'exact', head: true })
+    .eq('addressee_id', user.id)
+    .eq('status', 'pending')
+
   // RLS hides the pod entirely if the user isn't a member, so a null result
   // means "not in this pod (or it doesn't exist)".
   const { data: pod, error: podError } = await sb
@@ -32,7 +39,7 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
     return (
       <main className="min-h-screen" style={{ background: '#FFF6E5', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
         <style>{FONT_STYLE}</style>
-        <TopNav profile={profile || { id: user.id }} />
+        <TopNav profile={profile || { id: user.id }} pendingRequestCount={pendingRequestCount ?? 0} />
         <div className="max-w-4xl mx-auto p-8">
           <div style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '6px 6px 0 0 #1F1A3D', borderRadius: 16, padding: 32, textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>🌿</div>
@@ -79,6 +86,7 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
         currentMember={currentMember}
         currentUserId={user.id}
         threadId={threadId}
+        pendingRequestCount={pendingRequestCount ?? 0}
       />
     </main>
   )

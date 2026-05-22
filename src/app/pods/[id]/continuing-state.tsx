@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import MemberCard from './member-card'
 import SessionCard from './session-card'
 import PodChat from './pod-chat'
@@ -8,6 +9,36 @@ import PodChat from './pod-chat'
 export default function ContinuingState({ pod, members, sessions, currentUserId, podId, threadId }: any) {
   // capture "now" once at mount so render stays pure (react-hooks/purity)
   const [now] = useState(() => Date.now())
+  // profile_id -> friendship row with the current user (for the friend buttons)
+  const [friendships, setFriendships] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    const otherIds = (members || [])
+      .map((m: any) => m.profile_id)
+      .filter((id: string) => id && id !== currentUserId)
+    if (!otherIds.length) return
+
+    let active = true
+    const supabase = createClient()
+    async function load() {
+      const { data, error } = await supabase
+        .from('friendships')
+        .select('id, requester_id, addressee_id, status')
+        .or(`requester_id.eq.${currentUserId},addressee_id.eq.${currentUserId}`)
+      if (!active || error || !data) return
+      const map: Record<string, any> = {}
+      for (const f of data) {
+        const other = f.requester_id === currentUserId ? f.addressee_id : f.requester_id
+        if (otherIds.includes(other)) map[other] = f
+      }
+      setFriendships(map)
+    }
+    load()
+    return () => {
+      active = false
+    }
+  }, [members, currentUserId])
+
   const emoji = pod?.primary_interest?.emoji || '🌱'
   const name = pod?.name || (pod?.primary_interest?.name ? `${pod.primary_interest.name} pod` : 'your pod')
 
@@ -50,6 +81,9 @@ export default function ContinuingState({ pod, members, sessions, currentUserId,
             member={m.profile}
             variant="continuing"
             isYou={m.profile_id === currentUserId}
+            podId={podId}
+            currentUserId={currentUserId}
+            existingFriendship={friendships[m.profile_id] ?? null}
           />
         ))}
       </div>
