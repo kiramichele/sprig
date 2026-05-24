@@ -25,6 +25,7 @@ interface Props {
   cards: PromptCard[]
   advancing: boolean
   onAdvance: (action: AdvanceAction) => void
+  onLeave: () => void
   podName: string
   podEmoji: string
 }
@@ -50,6 +51,7 @@ export default function InCall({
   cards,
   advancing,
   onAdvance,
+  onLeave,
   podName,
   podEmoji,
 }: Props) {
@@ -254,7 +256,7 @@ export default function InCall({
             {videoOn ? '📹' : '🚫'}
           </button>
           <button
-            onClick={() => daily?.leave()}
+            onClick={onLeave}
             className="callctl"
             style={{ background: '#B00020', color: 'white' }}
           >

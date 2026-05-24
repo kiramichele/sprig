@@ -57,9 +57,10 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [showWipeConfirm, setShowWipeConfirm] = useState(false)
   const [wiping, setWiping] = useState(false)
+  const [seeding, setSeeding] = useState(false)
 
   const secretMissing = !cronSecret
-  const busy = running || resetting || wiping
+  const busy = running || resetting || wiping || seeding
 
   async function runMatcher() {
     setRunning(true)
@@ -113,6 +114,31 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
       setActionError(err instanceof Error ? err.message : 'request failed')
     } finally {
       setResetting(false)
+    }
+  }
+
+  async function reseedCeramicCall() {
+    setSeeding(true)
+    setActionError(null)
+    setResult(null)
+    setActionMessage(null)
+    try {
+      const res = await fetch('/api/admin/reseed-ceramic-session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cronSecret}` },
+      })
+      const json: { ok?: boolean; error?: string; sessionId?: string; podId?: string } =
+        await res.json()
+      if (!res.ok || !json.ok || !json.sessionId || !json.podId) {
+        setActionError(json.error || `reseed failed (HTTP ${res.status})`)
+        return
+      }
+      // jump straight into the freshly-created call
+      router.push(`/pods/${json.podId}/session/${json.sessionId}`)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'request failed')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -227,6 +253,36 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
             {actionMessage}
           </div>
         ) : null}
+      </section>
+
+      {/* ceramic-pod call tester */}
+      <section
+        className="chunky"
+        style={{ background: '#FFE9B8', borderRadius: 16, padding: 20, marginTop: 18 }}
+      >
+        <h2 className="display" style={{ fontSize: 22, marginBottom: 6 }}>
+          🪴 ceramic pod call tester
+        </h2>
+        <p style={{ fontSize: 13, opacity: 0.85, marginBottom: 14 }}>
+          deletes any existing sessions for the ceramic pod (you and maya & sam)
+          and creates a fresh &quot;happening now&quot; one, then drops you straight
+          into the call. handy for iterating on the video flow.
+        </p>
+        <button
+          onClick={reseedCeramicCall}
+          disabled={busy || secretMissing}
+          className="chunky"
+          style={{
+            background: '#6BCB77',
+            color: '#1F1A3D',
+            borderRadius: 12,
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: 15,
+          }}
+        >
+          {seeding ? 'seeding…' : 'reset + open ceramic call'}
+        </button>
       </section>
 
       {/* current pool */}

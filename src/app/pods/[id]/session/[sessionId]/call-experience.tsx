@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { DailyAudio, DailyProvider, useCallObject, useDaily } from '@daily-co/daily-react'
+import { DailyAudio, DailyProvider, useCallObject, useDaily, useDailyEvent } from '@daily-co/daily-react'
 import { createClient } from '@/lib/supabase/client'
 import type {
   AdvanceAction,
@@ -153,13 +153,35 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
     }
   }, [sessionId])
 
-  // Once the call has ended, send everyone to the pod's feedback page.
+  // Once the call has ended, send everyone to the pod's feedback page. Tear
+  // down Daily explicitly first so the room-destroyed event from the end-route
+  // doesn't surface as an unhandled "Meeting has ended" error.
   useEffect(() => {
     if (sessionState?.call_phase === 'ended' && !endedHandled.current) {
       endedHandled.current = true
+      daily?.leave().catch(() => {})
       router.push(`/pods/${podId}`)
     }
-  }, [sessionState?.call_phase, podId, router])
+  }, [sessionState?.call_phase, podId, router, daily])
+
+  // Belt-and-suspenders: if Daily reports we've left or errored (typically
+  // because someone else ended the call and the room is now gone) and we
+  // haven't already navigated, route out cleanly. Having an 'error' listener
+  // also keeps Daily from raising it as unhandled.
+  useDailyEvent('left-meeting', () => {
+    if (!endedHandled.current) {
+      endedHandled.current = true
+      router.push(`/pods/${podId}`)
+    }
+  })
+
+  useDailyEvent('error', (event) => {
+    console.warn('daily error event (treating as clean exit):', event)
+    if (!endedHandled.current) {
+      endedHandled.current = true
+      router.push(`/pods/${podId}`)
+    }
+  })
 
   // Advance the shared deck. Retries once silently before surfacing an error.
   const advance = useCallback(
@@ -194,6 +216,16 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
     [sessionId]
   )
 
+  // Manual leave from the in-call bar: tear down Daily and route back to the
+  // pod page. The 'left-meeting' handler above will short-circuit since we set
+  // endedHandled before navigating.
+  const leaveCall = useCallback(() => {
+    if (endedHandled.current) return
+    endedHandled.current = true
+    daily?.leave().catch(() => {})
+    router.push(`/pods/${podId}`)
+  }, [daily, router, podId])
+
   const endCall = useCallback(async () => {
     setEnding(true)
     setEndError(null)
@@ -203,12 +235,19 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
         const body = (await res.json().catch(() => ({}))) as { error?: string }
         throw new Error(body.error || `end failed (HTTP ${res.status})`)
       }
+      // Leave Daily cleanly before navigating so we don't get a stray
+      // "meeting ended" error from the room-destroyed event.
+      try {
+        await daily?.leave()
+      } catch {
+        /* best-effort */
+      }
       router.push(`/pods/${podId}`)
     } catch (err) {
       setEndError(err instanceof Error ? err.message : 'could not end the call')
       setEnding(false)
     }
-  }, [sessionId, podId, router])
+  }, [sessionId, podId, router, daily])
 
   if (status === 'error') {
     return (
@@ -262,6 +301,7 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
           cards={joinData.prompt_cards}
           advancing={advancing}
           onAdvance={advance}
+          onLeave={leaveCall}
           podName={podName}
           podEmoji={podEmoji}
         />

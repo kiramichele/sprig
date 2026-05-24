@@ -36,6 +36,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq('id', sessionId)
       .single()
     if (sessionError || !session) {
+      // If this fires for a session id you know exists, the admin client almost
+      // certainly isn't acting as service_role — check SUPABASE_SERVICE_ROLE_KEY.
+      console.error(
+        'session join: pod_sessions lookup returned nothing for',
+        sessionId,
+        '— sessionError:',
+        sessionError
+      )
       return NextResponse.json({ error: 'session not found' }, { status: 404 })
     }
 
