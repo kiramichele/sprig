@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import TopNav from '@/components/top-nav'
 import ProfileContent, {
   type ProfileInterest,
@@ -24,6 +25,7 @@ export default async function ProfileViewPage({
   const user = userData?.user
   if (!user) redirect('/login')
 
+  // Viewer's OWN data uses the session client (RLS allows self-access).
   const { data: viewerProfile } = await sb
     .from('profiles')
     .select('id, display_name, photo_url, username')
@@ -36,7 +38,13 @@ export default async function ProfileViewPage({
     .eq('addressee_id', user.id)
     .eq('status', 'pending')
 
-  const { data: profile } = await sb
+  // Everything about the *target* profile uses the admin client so RLS on
+  // `profiles` (which restricts auth'd users to self / pod-mates / friends)
+  // doesn't false-404 us before we've even computed the relationship. The UI
+  // below gates what gets rendered per relationship, so privacy is preserved.
+  const admin: any = createAdminClient()
+
+  const { data: profile } = await admin
     .from('profiles')
     .select('id, username, display_name, photo_url, bio, city, deleted_at')
     .eq('username', username)
@@ -102,8 +110,8 @@ export default async function ProfileViewPage({
   if (profile.id === user.id) {
     relationship = 'self'
   } else {
-    // friendship?
-    const { data: friendship } = await sb
+    // friendship? — admin client so we always get a definitive answer
+    const { data: friendship } = await admin
       .from('friendships')
       .select('id')
       .or(
@@ -115,15 +123,15 @@ export default async function ProfileViewPage({
       relationship = 'friend'
       friendshipId = friendship.id
     } else {
-      // shared pod?
-      const { data: myPods } = await sb
+      // shared pod? — admin client bypasses RLS on pod_members
+      const { data: myPods } = await admin
         .from('pod_members')
         .select('pod_id')
         .eq('profile_id', user.id)
         .is('left_at', null)
       const myPodIds = (myPods ?? []).map((row: any) => row.pod_id)
       if (myPodIds.length) {
-        const { data: theirs } = await sb
+        const { data: theirs } = await admin
           .from('pod_members')
           .select('pod_id, pod:pods!pod_members_pod_id_fkey(id, name, primary_interest:interests(name))')
           .eq('profile_id', profile.id)
@@ -141,10 +149,10 @@ export default async function ProfileViewPage({
     }
   }
 
-  // interests (visible if not stranger)
+  // interests (visible if not stranger) — admin client, same reason
   let interests: ProfileInterest[] = []
   if (relationship !== 'stranger') {
-    const { data: piData } = await sb
+    const { data: piData } = await admin
       .from('profile_interests')
       .select('intensity, interest:interests(id, name, emoji)')
       .eq('profile_id', profile.id)
