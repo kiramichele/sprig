@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getErrorMessage } from '@/lib/scheduling/errors'
 
 interface Props {
   podId: string
@@ -106,8 +107,8 @@ export default function ProposeSessionModal({ podId, lastSessionAt, onClose, onP
       if (rpcError) throw rpcError
       onProposed()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setError(friendlyError(msg))
+      console.error('propose_session failed:', err)
+      setError(friendlyError(getErrorMessage(err)))
       setBusy(false)
     }
   }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getErrorMessage } from '@/lib/scheduling/errors'
 import type {
   ProposedSession,
   RsvpResponse,
@@ -176,7 +177,8 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
       setEditing(false)
       router.refresh()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
+      console.error('respond_to_session failed:', err)
+      const msg = getErrorMessage(err)
       setError(friendlyError(msg))
       if (/no longer accepting rsvps/i.test(msg)) router.refresh()
     } finally {
