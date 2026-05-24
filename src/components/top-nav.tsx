@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 type Profile = {
@@ -42,12 +42,14 @@ export default function TopNav({
         </a>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* friends — the pending-request badge belongs here, since the
+              count is incoming friend requests and clicking should lead to them */}
           <a
-            href="/messages"
-            aria-label="messages"
+            href="/friends"
+            aria-label="friends"
             style={{ position: 'relative', display: 'flex', color: '#1F1A3D' }}
           >
-            <MessageCircle size={26} strokeWidth={2.5} />
+            <Users size={26} strokeWidth={2.5} />
             {pendingRequestCount > 0 ? (
               <span
                 style={{
@@ -60,6 +62,15 @@ export default function TopNav({
                 {pendingRequestCount > 9 ? '9+' : pendingRequestCount}
               </span>
             ) : null}
+          </a>
+
+          {/* dms */}
+          <a
+            href="/messages"
+            aria-label="messages"
+            style={{ display: 'flex', color: '#1F1A3D' }}
+          >
+            <MessageCircle size={26} strokeWidth={2.5} />
           </a>
 
           <div style={{ position: 'relative' }}>
