@@ -175,6 +175,17 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
       const result = Array.isArray(data) ? data[0] : data
       if (result?.promoted) {
         setToast(`everyone's in! see you ${formatLong(session.scheduled_for)} 🌱`)
+      } else {
+        // Always confirm — otherwise users who re-confirm their existing
+        // answer (typical for the proposer who's auto-yes'd) see no change
+        // and think the button is broken.
+        const yes = typeof result?.yes_count === 'number' ? result.yes_count : null
+        const total = typeof result?.total_members === 'number' ? result.total_members : null
+        setToast(
+          yes !== null && total !== null
+            ? `saved ✓  ${yes}/${total} said yes`
+            : 'saved ✓'
+        )
       }
       setEditing(false)
       router.refresh()
@@ -302,14 +313,37 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
           ) : null}
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 14 }}>
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10,
+            background: '#FFF6E5', border: '2px solid #1F1A3D', borderRadius: 10,
+            padding: '8px 12px', fontSize: 14,
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 22, height: 22, borderRadius: 999,
+              background: RESPONSE_GLYPH[myRsvp!.response].tone, fontWeight: 700,
+            }}
+            aria-hidden
+          >
+            {RESPONSE_GLYPH[myRsvp!.response].glyph}
+          </span>
           <span>
-            you said <strong>{myRsvp?.response}</strong>
+            you&apos;re on record as{' '}
+            <strong>
+              {myRsvp?.response === 'yes'
+                ? 'in'
+                : myRsvp?.response === 'no'
+                  ? "can't make it"
+                  : 'maybe'}
+            </strong>
           </span>
           <button
             onClick={() => setEditing(true)}
             style={{
-              background: 'transparent', border: 'none', textDecoration: 'underline',
+              marginLeft: 'auto', background: 'transparent', border: 'none', textDecoration: 'underline',
               fontWeight: 700, cursor: 'pointer', color: '#4D96FF', fontSize: 13,
             }}
           >
