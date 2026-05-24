@@ -148,7 +148,7 @@ export default function TopNav({
   const initial = (profile.display_name || profile.id || 'U').slice(0, 1).toUpperCase()
 
   return (
-    <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#FFF6E5', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+    <header style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFF6E5', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
       <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
         <a href="/home" className="display text-2xl" style={{ fontFamily: 'Caprasimo, Georgia, serif' }}>
           sprig 🌱
@@ -197,11 +197,11 @@ export default function TopNav({
             </button>
 
             {open && (
-              <div style={{ position: 'absolute', right: 0, marginTop: 8, background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8, boxShadow: '0 8px 20px rgba(0,0,0,0.08)', minWidth: 140 }}>
-                <a href="/profile" className="block px-4 py-2">Profile</a>
-                <a href="/friends" className="block px-4 py-2">Friends</a>
-                <a href="/settings" className="block px-4 py-2">Settings</a>
-                <button onClick={handleSignOut} className="w-full text-left px-4 py-2">Sign out</button>
+              <div style={{ position: 'absolute', right: 0, marginTop: 8, background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8, boxShadow: '0 8px 20px rgba(0,0,0,0.08)', minWidth: 160, zIndex: 60 }}>
+                <a href="/profile" className="block px-4 py-3">Profile</a>
+                <a href="/friends" className="block px-4 py-3">Friends</a>
+                <a href="/settings" className="block px-4 py-3">Settings</a>
+                <button onClick={handleSignOut} className="w-full text-left px-4 py-3">Sign out</button>
               </div>
             )}
           </div>
