@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import type { MessagingDatabase } from '@/lib/messaging/types'
 import type { ChatProfile } from '../messages-list'
 
 const AVATAR_COLORS = ['#FFD23F', '#6BCB77', '#4D96FF', '#FF6B6B', '#C780E8']
@@ -100,6 +102,24 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
     const el = listRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages])
+
+  // Mark this thread as read whenever the message list changes (initial load,
+  // sending, or realtime arrival). The top nav's unread badge will clear on
+  // the next page navigation, since TopNav re-mounts then.
+  useEffect(() => {
+    if (!threadId || messages.length === 0) return
+    // single documented cast — dm_thread_reads isn't in the generated types yet
+    const supabase = createClient() as unknown as SupabaseClient<MessagingDatabase>
+    supabase
+      .from('dm_thread_reads')
+      .upsert(
+        { profile_id: currentUserId, thread_id: threadId, last_read_at: new Date().toISOString() },
+        { onConflict: 'profile_id,thread_id' }
+      )
+      .then(({ error }) => {
+        if (error) console.error('dm chat: mark read failed —', error)
+      })
+  }, [threadId, currentUserId, messages.length])
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()

@@ -1,14 +1,34 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { MessageCircle, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import type { MessagingDatabase } from '@/lib/messaging/types'
 
 type Profile = {
   id: string
   display_name?: string | null
   photo_url?: string | null
+}
+
+const BADGE_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  top: -5,
+  right: -7,
+  background: '#FF6B9D',
+  color: 'white',
+  border: '2px solid #1F1A3D',
+  borderRadius: 9999,
+  minWidth: 18,
+  height: 18,
+  fontSize: 10,
+  fontWeight: 700,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0 3px',
 }
 
 export default function TopNav({
@@ -20,6 +40,99 @@ export default function TopNav({
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [unreadDms, setUnreadDms] = useState(0)
+
+  // Unread DM count — fetched client-side and refreshed on every new message
+  // arrival via realtime. Recomputes on navigation since TopNav re-mounts.
+  useEffect(() => {
+    const userId = profile.id
+    if (!userId) return
+
+    let active = true
+    // single documented cast — dm_thread_reads isn't in the generated types yet
+    const supabase = createClient() as unknown as SupabaseClient<MessagingDatabase>
+
+    async function computeUnread() {
+      try {
+        const { data: friendships } = await supabase
+          .from('friendships')
+          .select('id')
+          .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+          .eq('status', 'accepted')
+        const friendshipIds = (friendships ?? []).map((f) => f.id)
+        if (!friendshipIds.length) {
+          if (active) setUnreadDms(0)
+          return
+        }
+
+        const { data: threads } = await supabase
+          .from('message_threads')
+          .select('id')
+          .eq('thread_type', 'dm')
+          .in('friendship_id', friendshipIds)
+        const threadIds = (threads ?? []).map((t) => t.id)
+        if (!threadIds.length) {
+          if (active) setUnreadDms(0)
+          return
+        }
+
+        const { data: msgs } = await supabase
+          .from('messages')
+          .select('thread_id, created_at')
+          .in('thread_id', threadIds)
+          .neq('sender_id', userId)
+          .order('created_at', { ascending: false })
+        const latestByThread: Record<string, string> = {}
+        for (const m of msgs ?? []) {
+          const tid = m.thread_id as string
+          if (!latestByThread[tid]) latestByThread[tid] = m.created_at as string
+        }
+        const consideredIds = Object.keys(latestByThread)
+        if (!consideredIds.length) {
+          if (active) setUnreadDms(0)
+          return
+        }
+
+        const { data: reads } = await supabase
+          .from('dm_thread_reads')
+          .select('thread_id, last_read_at')
+          .eq('profile_id', userId)
+          .in('thread_id', consideredIds)
+        const readByThread: Record<string, string> = {}
+        for (const r of reads ?? []) {
+          readByThread[(r as { thread_id: string }).thread_id] = (r as { last_read_at: string }).last_read_at
+        }
+
+        let unread = 0
+        for (const [tid, latest] of Object.entries(latestByThread)) {
+          const lr = readByThread[tid]
+          if (!lr || new Date(latest).getTime() > new Date(lr).getTime()) unread++
+        }
+        if (active) setUnreadDms(unread)
+      } catch (err) {
+        // failing silently is fine — the badge just won't show
+        console.error('top-nav: unread dm count failed —', err)
+      }
+    }
+
+    computeUnread()
+
+    const channel = supabase
+      .channel('top-nav-unread-dms')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => {
+          computeUnread()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      active = false
+      supabase.removeChannel(channel)
+    }
+  }, [profile.id])
 
   async function handleSignOut() {
     try {
@@ -42,8 +155,7 @@ export default function TopNav({
         </a>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* friends — the pending-request badge belongs here, since the
-              count is incoming friend requests and clicking should lead to them */}
+          {/* friends — pending friend-request count */}
           <a
             href="/friends"
             aria-label="friends"
@@ -51,26 +163,24 @@ export default function TopNav({
           >
             <Users size={26} strokeWidth={2.5} />
             {pendingRequestCount > 0 ? (
-              <span
-                style={{
-                  position: 'absolute', top: -5, right: -7, background: '#FF6B9D', color: 'white',
-                  border: '2px solid #1F1A3D', borderRadius: 9999, minWidth: 18, height: 18,
-                  fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', padding: '0 3px',
-                }}
-              >
+              <span style={BADGE_STYLE}>
                 {pendingRequestCount > 9 ? '9+' : pendingRequestCount}
               </span>
             ) : null}
           </a>
 
-          {/* dms */}
+          {/* dms — unread message count */}
           <a
             href="/messages"
             aria-label="messages"
-            style={{ display: 'flex', color: '#1F1A3D' }}
+            style={{ position: 'relative', display: 'flex', color: '#1F1A3D' }}
           >
             <MessageCircle size={26} strokeWidth={2.5} />
+            {unreadDms > 0 ? (
+              <span style={BADGE_STYLE}>
+                {unreadDms > 9 ? '9+' : unreadDms}
+              </span>
+            ) : null}
           </a>
 
           <div style={{ position: 'relative' }}>
