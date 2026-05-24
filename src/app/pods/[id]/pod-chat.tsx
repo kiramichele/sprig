@@ -148,15 +148,28 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
           messages.map((msg) => {
             const mine = msg.sender_id === currentUserId
             const sender = memberById[msg.sender_id] || {}
+            const profileHref = sender?.username ? `/profile/${sender.username}` : null
+            const senderLabel = mine ? 'you' : sender.display_name || 'someone'
+            const avatarNode = <Avatar profile={sender} size={32} />
             return (
               <div
                 key={msg.id}
                 style={{ display: 'flex', flexDirection: mine ? 'row-reverse' : 'row', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}
               >
-                <Avatar profile={sender} size={32} />
+                {profileHref ? (
+                  <a href={profileHref} aria-label="view profile" style={{ display: 'flex', textDecoration: 'none' }}>
+                    {avatarNode}
+                  </a>
+                ) : (
+                  avatarNode
+                )}
                 <div style={{ maxWidth: '72%' }}>
                   <div style={{ fontSize: 11, opacity: 0.55, marginBottom: 2, textAlign: mine ? 'right' : 'left' }}>
-                    {mine ? 'you' : sender.display_name || 'someone'}
+                    {profileHref ? (
+                      <a href={profileHref} style={{ color: 'inherit', textDecoration: 'none' }}>{senderLabel}</a>
+                    ) : (
+                      senderLabel
+                    )}
                   </div>
                   <div
                     style={{

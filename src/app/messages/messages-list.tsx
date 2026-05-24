@@ -89,26 +89,43 @@ export default function MessagesList({ threads }: Props) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {threads.map((t) => (
-            <a
+            <div
               key={t.friendshipId}
-              href={`/messages/${t.friendshipId}`}
               className="chunky"
               style={{
                 background: 'white', borderRadius: 12, padding: '12px 16px', display: 'flex',
-                alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit',
+                alignItems: 'center', gap: 12,
               }}
             >
-              <Avatar profile={t.otherUser} size={48} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700 }}>{t.otherUser.display_name || 'someone'}</div>
-                <div style={{ fontSize: 13, opacity: 0.65, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {t.lastMessage ? truncate(t.lastMessage, 80) : 'no messages yet'}
+              {t.otherUser.username ? (
+                <a
+                  href={`/profile/${t.otherUser.username}`}
+                  aria-label="view profile"
+                  style={{ display: 'flex', flexShrink: 0, textDecoration: 'none' }}
+                >
+                  <Avatar profile={t.otherUser} size={48} />
+                </a>
+              ) : (
+                <Avatar profile={t.otherUser} size={48} />
+              )}
+              <a
+                href={`/messages/${t.friendshipId}`}
+                style={{
+                  flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 12,
+                  textDecoration: 'none', color: 'inherit',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700 }}>{t.otherUser.display_name || 'someone'}</div>
+                  <div style={{ fontSize: 13, opacity: 0.65, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t.lastMessage ? truncate(t.lastMessage, 80) : 'no messages yet'}
+                  </div>
                 </div>
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.55, flexShrink: 0 }}>
-                {relativeTime(t.lastMessageAt, now)}
-              </div>
-            </a>
+                <div style={{ fontSize: 12, opacity: 0.55, flexShrink: 0 }}>
+                  {relativeTime(t.lastMessageAt, now)}
+                </div>
+              </a>
+            </div>
           ))}
         </div>
       )}

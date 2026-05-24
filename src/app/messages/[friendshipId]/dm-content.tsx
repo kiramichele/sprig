@@ -58,10 +58,20 @@ export default function DmContent({ profile, otherUser, threadId, currentUserId,
 
       <div className="max-w-4xl mx-auto p-8">
         <a href="/messages" style={{ fontWeight: 700, fontSize: 14 }}>← back to messages</a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0 20px' }}>
-          <HeaderAvatar profile={otherUser} />
-          <h1 className="display" style={{ fontSize: 32 }}>{otherUser.display_name || 'someone'}</h1>
-        </div>
+        {otherUser.username ? (
+          <a
+            href={`/profile/${otherUser.username}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0 20px', textDecoration: 'none', color: 'inherit' }}
+          >
+            <HeaderAvatar profile={otherUser} />
+            <h1 className="display" style={{ fontSize: 32 }}>{otherUser.display_name || 'someone'}</h1>
+          </a>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0 20px' }}>
+            <HeaderAvatar profile={otherUser} />
+            <h1 className="display" style={{ fontSize: 32 }}>{otherUser.display_name || 'someone'}</h1>
+          </div>
+        )}
         <DmChat threadId={threadId} currentUserId={currentUserId} otherUser={otherUser} />
       </div>
     </div>

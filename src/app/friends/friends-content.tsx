@@ -124,13 +124,26 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {incoming.map((r) => (
               <div key={r.id} className="chunky" style={{ background: '#FFF8E6', borderRadius: 14, padding: 16 }}>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  {r.requester ? <Avatar profile={r.requester} /> : null}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700 }}>{r.requester?.display_name || 'someone'}</div>
-                    <div style={{ fontSize: 13, opacity: 0.7 }}>from your pod: {podLabel(r.origin_pod)}</div>
+                {r.requester?.username ? (
+                  <a
+                    href={`/profile/${r.requester.username}`}
+                    style={{ display: 'flex', gap: 12, textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <Avatar profile={r.requester} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700 }}>{r.requester.display_name || 'someone'}</div>
+                      <div style={{ fontSize: 13, opacity: 0.7 }}>from your pod: {podLabel(r.origin_pod)}</div>
+                    </div>
+                  </a>
+                ) : (
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    {r.requester ? <Avatar profile={r.requester} /> : null}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700 }}>{r.requester?.display_name || 'someone'}</div>
+                      <div style={{ fontSize: 13, opacity: 0.7 }}>from your pod: {podLabel(r.origin_pod)}</div>
+                    </div>
                   </div>
-                </div>
+                )}
                 {r.request_note ? (
                   <div
                     style={{
@@ -175,13 +188,30 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
                 className="chunky"
                 style={{ background: 'white', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}
               >
-                {r.addressee ? <Avatar profile={r.addressee} size={40} /> : null}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700 }}>{r.addressee?.display_name || 'someone'}</div>
-                  <div style={{ fontSize: 13, opacity: 0.7 }}>
-                    you sent on {formatDate(r.requested_at)} · {podLabel(r.origin_pod)}
-                  </div>
-                </div>
+                {r.addressee?.username ? (
+                  <a
+                    href={`/profile/${r.addressee.username}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <Avatar profile={r.addressee} size={40} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700 }}>{r.addressee.display_name || 'someone'}</div>
+                      <div style={{ fontSize: 13, opacity: 0.7 }}>
+                        you sent on {formatDate(r.requested_at)} · {podLabel(r.origin_pod)}
+                      </div>
+                    </div>
+                  </a>
+                ) : (
+                  <>
+                    {r.addressee ? <Avatar profile={r.addressee} size={40} /> : null}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700 }}>{r.addressee?.display_name || 'someone'}</div>
+                      <div style={{ fontSize: 13, opacity: 0.7 }}>
+                        you sent on {formatDate(r.requested_at)} · {podLabel(r.origin_pod)}
+                      </div>
+                    </div>
+                  </>
+                )}
                 <button
                   onClick={() => updateStatus(r.id, 'withdrawn')}
                   disabled={busyId === r.id}
@@ -209,11 +239,26 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
               className="chunky"
               style={{ background: 'white', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}
             >
-              <Avatar profile={f.friend} size={44} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700 }}>{f.friend.display_name || 'someone'}</div>
-                <div style={{ fontSize: 13, opacity: 0.7 }}>you connected in {podLabel(f.origin_pod)}</div>
-              </div>
+              {f.friend.username ? (
+                <a
+                  href={`/profile/${f.friend.username}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Avatar profile={f.friend} size={44} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700 }}>{f.friend.display_name || 'someone'}</div>
+                    <div style={{ fontSize: 13, opacity: 0.7 }}>you connected in {podLabel(f.origin_pod)}</div>
+                  </div>
+                </a>
+              ) : (
+                <>
+                  <Avatar profile={f.friend} size={44} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700 }}>{f.friend.display_name || 'someone'}</div>
+                    <div style={{ fontSize: 13, opacity: 0.7 }}>you connected in {podLabel(f.origin_pod)}</div>
+                  </div>
+                </>
+              )}
               <a
                 href={`/messages/${f.friendshipId}`}
                 className="chunky"

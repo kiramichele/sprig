@@ -43,17 +43,30 @@ export default function MemberCard({ member, variant, isYou, podId, currentUserI
   const rotate = (seed % 7) - 3 // -3..3 degrees, for the sticker feel
 
   if (variant === 'pre-first') {
-    return (
-      <div
-        style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-          width: 96, transform: `rotate(${rotate}deg)`,
-        }}
-      >
+    const preFirstHref = m.username ? `/profile/${m.username}` : null
+    const innerStack = (
+      <>
         <Avatar member={m} size={64} />
         <div style={{ fontWeight: 700, fontSize: 14, textAlign: 'center' }}>
           {firstName}{isYou ? ' (you)' : ''}
         </div>
+      </>
+    )
+    const stackStyle: React.CSSProperties = {
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+    }
+    return (
+      <div style={{ width: 96, transform: `rotate(${rotate}deg)` }}>
+        {preFirstHref ? (
+          <a
+            href={preFirstHref}
+            style={{ ...stackStyle, textDecoration: 'none', color: 'inherit' }}
+          >
+            {innerStack}
+          </a>
+        ) : (
+          <div style={stackStyle}>{innerStack}</div>
+        )}
       </div>
     )
   }

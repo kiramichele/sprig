@@ -165,6 +165,7 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
         ) : (
           messages.map((msg) => {
             const mine = msg.sender_id === currentUserId
+            const profileHref = otherUser.username ? `/profile/${otherUser.username}` : null
             return (
               <div
                 key={String(msg.id)}
@@ -173,7 +174,13 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
                   marginBottom: 12, alignItems: 'flex-end',
                 }}
               >
-                {mine ? null : <Avatar profile={otherUser} size={32} />}
+                {mine ? null : profileHref ? (
+                  <a href={profileHref} aria-label="view profile" style={{ display: 'flex', textDecoration: 'none' }}>
+                    <Avatar profile={otherUser} size={32} />
+                  </a>
+                ) : (
+                  <Avatar profile={otherUser} size={32} />
+                )}
                 <div
                   style={{
                     maxWidth: '74%',
