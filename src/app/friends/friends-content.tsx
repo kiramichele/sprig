@@ -196,7 +196,7 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
                     <Avatar profile={r.addressee} size={40} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700 }}>{r.addressee.display_name || 'someone'}</div>
-                      <div style={{ fontSize: 13, opacity: 0.7 }}>
+                      <div suppressHydrationWarning style={{ fontSize: 13, opacity: 0.7 }}>
                         you sent on {formatDate(r.requested_at)} · {podLabel(r.origin_pod)}
                       </div>
                     </div>
@@ -206,7 +206,7 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
                     {r.addressee ? <Avatar profile={r.addressee} size={40} /> : null}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700 }}>{r.addressee?.display_name || 'someone'}</div>
-                      <div style={{ fontSize: 13, opacity: 0.7 }}>
+                      <div suppressHydrationWarning style={{ fontSize: 13, opacity: 0.7 }}>
                         you sent on {formatDate(r.requested_at)} · {podLabel(r.origin_pod)}
                       </div>
                     </div>

@@ -11,7 +11,7 @@ export default function ActiveState({ profile, pods, sessions, onJoin }: any) {
 
       {soon ? (
         <div style={{ background: '#FFF8E6', padding: 12, borderRadius: 8, marginBottom: 12 }}>
-          <div>your next pod meets in <strong>{new Date(soon.scheduled_for).toLocaleString()}</strong></div>
+          <div>your next pod meets in <strong suppressHydrationWarning>{new Date(soon.scheduled_for).toLocaleString()}</strong></div>
           <a href={`/pods/${soon.pod_id}`} className="inline-block mt-2 px-4 py-2" style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12 }}>join call</a>
         </div>
       ) : null}

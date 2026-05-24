@@ -46,7 +46,7 @@ export default function SessionCard({ session, podId }: any) {
         </span>
       </div>
 
-      <div style={{ fontWeight: 700, fontSize: 18 }}>{when}</div>
+      <div suppressHydrationWarning style={{ fontWeight: 700, fontSize: 18 }}>{when}</div>
       <div style={{ fontSize: 13, opacity: 0.7 }}>{duration}</div>
 
       {joinable ? (

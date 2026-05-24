@@ -121,7 +121,7 @@ export default function MessagesList({ threads }: Props) {
                     {t.lastMessage ? truncate(t.lastMessage, 80) : 'no messages yet'}
                   </div>
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.55, flexShrink: 0 }}>
+                <div suppressHydrationWarning style={{ fontSize: 12, opacity: 0.55, flexShrink: 0 }}>
                   {relativeTime(t.lastMessageAt, now)}
                 </div>
               </a>

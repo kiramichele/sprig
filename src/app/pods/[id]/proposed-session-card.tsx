@@ -158,6 +158,7 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
 
   async function rsvp(response: RsvpResponse) {
     if (busy) return
+    console.log('[rsvp] click — session=', session.id, 'response=', response)
     setBusy(true)
     setError(null)
     try {
@@ -168,6 +169,7 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
         p_session_id: session.id,
         p_response: response,
       })
+      console.log('[rsvp] rpc returned — data=', data, 'error=', rpcError)
       if (rpcError) throw rpcError
       // Server returns a single-row table; supabase-js gives us an array.
       const result = Array.isArray(data) ? data[0] : data
@@ -177,7 +179,7 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
       setEditing(false)
       router.refresh()
     } catch (err) {
-      console.error('respond_to_session failed:', err)
+      console.error('[rsvp] respond_to_session failed:', err)
       const msg = getErrorMessage(err)
       setError(friendlyError(msg))
       if (/no longer accepting rsvps/i.test(msg)) router.refresh()
@@ -196,6 +198,19 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
         position: 'relative',
       }}
     >
+      {error ? (
+        <div
+          role="alert"
+          style={{
+            background: '#FFE5E5', border: '2px solid #B00020', color: '#B00020',
+            borderRadius: 10, padding: '10px 14px', fontSize: 14, fontWeight: 700,
+            marginBottom: 12,
+          }}
+        >
+          ⚠️ {error}
+        </div>
+      ) : null}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
         <span
           style={{
@@ -205,8 +220,11 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
         >
           📅 proposed session
         </span>
+        {busy ? (
+          <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.7 }}>saving rsvp…</span>
+        ) : null}
       </div>
-      <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 2 }}>
+      <div suppressHydrationWarning style={{ fontWeight: 700, fontSize: 20, marginBottom: 2 }}>
         {formatLong(session.scheduled_for)}
       </div>
       <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>
@@ -302,19 +320,8 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
 
       <div style={{ fontSize: 13, opacity: 0.75 }}>{statusLine}</div>
       {session.proposal_deadline ? (
-        <div style={{ fontSize: 12, opacity: 0.55, marginTop: 4 }}>
+        <div suppressHydrationWarning style={{ fontSize: 12, opacity: 0.55, marginTop: 4 }}>
           decide by {formatShortDeadline(session.proposal_deadline)}
-        </div>
-      ) : null}
-
-      {error ? (
-        <div
-          style={{
-            marginTop: 10, background: '#FFE5E5', border: '2px solid #B00020', color: '#B00020',
-            borderRadius: 10, padding: '7px 12px', fontSize: 13, fontWeight: 600,
-          }}
-        >
-          {error}
         </div>
       ) : null}
 

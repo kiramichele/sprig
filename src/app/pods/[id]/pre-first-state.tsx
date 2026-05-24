@@ -44,7 +44,7 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
 
       {soon && next ? (
         <div className="chunky" style={{ background: '#FFD23F', borderRadius: 14, padding: 20, marginBottom: 8 }}>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>
+          <div suppressHydrationWarning style={{ fontWeight: 700, fontSize: 18 }}>
             {hasStarted
               ? 'your first call is happening now — hop in 🎥'
               : `your first call is in ${relative(next.scheduled_for, now)}`}
