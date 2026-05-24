@@ -11,6 +11,7 @@ type Profile = {
   id: string
   display_name?: string | null
   photo_url?: string | null
+  username?: string | null
 }
 
 const BADGE_STYLE: React.CSSProperties = {
@@ -198,7 +199,7 @@ export default function TopNav({
 
             {open && (
               <div style={{ position: 'absolute', right: 0, marginTop: 8, background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8, boxShadow: '0 8px 20px rgba(0,0,0,0.08)', minWidth: 160, zIndex: 60 }}>
-                <a href="/profile" className="block px-4 py-3">Profile</a>
+                <a href={profile.username ? `/profile/${profile.username}` : '/settings'} className="block px-4 py-3">Profile</a>
                 <a href="/friends" className="block px-4 py-3">Friends</a>
                 <a href="/settings" className="block px-4 py-3">Settings</a>
                 <button onClick={handleSignOut} className="w-full text-left px-4 py-3">Sign out</button>
