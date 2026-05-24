@@ -57,21 +57,36 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
     )
   }
 
-  const [membersRes, sessionsRes, threadRes] = await Promise.all([
+  const [membersRes, sessionsRes, proposalsRes, threadRes] = await Promise.all([
     sb
       .from('pod_members')
       .select('profile_id, joined_at, left_at, wants_to_continue, feedback_at, profile:profiles(id, display_name, photo_url, bio, city, username)')
       .eq('pod_id', id)
       .is('left_at', null),
     sb.from('pod_sessions').select('*').eq('pod_id', id).order('scheduled_for', { ascending: true }),
+    // Proposed sessions: join the proposer's profile and all rsvps (with rsvper
+    // profile). The proposer's auto-yes is one of those rsvps.
+    sb
+      .from('pod_sessions')
+      .select(
+        'id, pod_id, scheduled_for, duration_minutes, status, proposed_by, proposed_at, proposal_deadline, is_first_session,' +
+          ' proposer:profiles!pod_sessions_proposed_by_fkey(id, display_name, photo_url, username),' +
+          ' rsvps:session_rsvps(id, session_id, profile_id, response, responded_at,' +
+          '   rsvper:profiles(id, display_name, photo_url, username))'
+      )
+      .eq('pod_id', id)
+      .eq('status', 'proposed')
+      .order('scheduled_for', { ascending: true }),
     sb.from('message_threads').select('id').eq('pod_id', id).limit(1),
   ])
   if (membersRes.error) console.error('pod page: pod_members query failed —', membersRes.error)
   if (sessionsRes.error) console.error('pod page: pod_sessions query failed —', sessionsRes.error)
+  if (proposalsRes.error) console.error('pod page: proposed sessions query failed —', proposalsRes.error)
   if (threadRes.error) console.error('pod page: message_threads query failed —', threadRes.error)
 
   const members = membersRes.data || []
   const sessions = sessionsRes.data || []
+  const proposals = proposalsRes.data || []
   const threadId = threadRes.data && threadRes.data[0] ? threadRes.data[0].id : null
   const currentMember = members.find((m: any) => m.profile_id === user.id) || null
 
@@ -83,6 +98,7 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
         pod={pod}
         members={members}
         sessions={sessions}
+        proposals={proposals}
         currentMember={currentMember}
         currentUserId={user.id}
         threadId={threadId}

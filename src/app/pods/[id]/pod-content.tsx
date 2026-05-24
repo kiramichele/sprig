@@ -10,6 +10,7 @@ export default function PodContent({
   pod,
   members,
   sessions,
+  proposals,
   currentMember,
   currentUserId,
   threadId,
@@ -17,6 +18,7 @@ export default function PodContent({
 }: any) {
   const safeMembers = Array.isArray(members) ? members : []
   const safeSessions = Array.isArray(sessions) ? sessions : []
+  const safeProposals = Array.isArray(proposals) ? proposals : []
 
   // pick the lifecycle state
   const isContinuing = pod?.chat_unlocked === true || pod?.status === 'continuing'
@@ -46,6 +48,7 @@ export default function PodContent({
             pod={pod}
             members={safeMembers}
             sessions={safeSessions}
+            proposals={safeProposals}
             currentUserId={currentUserId}
             podId={pod.id}
             threadId={threadId}
