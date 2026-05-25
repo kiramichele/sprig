@@ -24,6 +24,7 @@ export type EmailType =
   | 'friend_request_received'
   | 'friend_request_accepted'
   | 'pod_chat_unlocked'
+  | 'welcome'
 
 interface SendEmailParams {
   recipientId: string
@@ -44,7 +45,11 @@ type NotificationPrefKey =
   | 'email_friend_requests'
   | 'email_pod_chat_unlocked'
 
-const PREF_BY_TYPE: Record<EmailType, NotificationPrefKey> = {
+// Partial because purely transactional emails (e.g. welcome) have no
+// user-controllable opt-out — they fire before the user has even seen settings.
+// An absent entry here means: do not consult notification_preferences for this
+// email type, just send.
+const PREF_BY_TYPE: Partial<Record<EmailType, NotificationPrefKey>> = {
   pod_matched: 'email_pod_matched',
   session_reminder_24h: 'email_session_reminders',
   session_reminder_1h: 'email_session_reminders',
