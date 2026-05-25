@@ -82,7 +82,16 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold mb-1.5" style={{ color: '#1F1A3D' }}>password</label>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <label className="block text-sm font-bold" style={{ color: '#1F1A3D' }}>password</label>
+              <Link
+                href="/forgot-password"
+                className="text-xs font-bold underline"
+                style={{ color: '#FF6B9D' }}
+              >
+                forgot?
+              </Link>
+            </div>
             <input
               type="password"
               className="field"
