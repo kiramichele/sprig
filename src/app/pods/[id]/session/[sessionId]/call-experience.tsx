@@ -130,9 +130,18 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
     }
   }, [daily, sessionId, currentUser.display_name, currentUser.id, retryKey])
 
-  // Realtime: pod_session_state updates keep every client in sync.
+  // Keep every client in sync with the shared deck (current card, round,
+  // speaker, call_phase). Two layers, because realtime can silently fail for
+  // reasons that aren't user-visible (publication not picked up, RLS denying
+  // the subscriber, websocket stripped by a proxy):
+  //   1. Supabase realtime — instant updates when it works.
+  //   2. Polling fallback every 3s — catches anything realtime missed, so
+  //      "next card" always lands on every screen within a couple seconds.
+  // The realtime subscription remains so updates feel instant on the happy
+  // path; polling is the belt-and-suspenders.
   useEffect(() => {
     const supabase = createClient()
+
     const channel = supabase
       .channel(`session-state-${sessionId}`)
       .on(
@@ -147,8 +156,42 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
           setSessionState(payload.new as unknown as PodSessionState)
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('session-state realtime', status, err)
+        }
+      })
+
+    let stopped = false
+    const POLL_MS = 3000
+    async function poll() {
+      if (stopped) return
+      try {
+        const { data, error } = await supabase
+          .from('pod_session_state')
+          .select('*')
+          .eq('session_id', sessionId)
+          .single()
+        if (!stopped && !error && data) {
+          // Use the most recent updated_at as the freshness check so a stale
+          // poll result never clobbers a fresher realtime update.
+          setSessionState((prev) => {
+            if (!prev) return data as unknown as PodSessionState
+            const next = data as unknown as PodSessionState
+            const prevAt = new Date(prev.updated_at).getTime()
+            const nextAt = new Date(next.updated_at).getTime()
+            return nextAt > prevAt ? next : prev
+          })
+        }
+      } catch {
+        /* best-effort */
+      }
+    }
+    const interval = setInterval(poll, POLL_MS)
+
     return () => {
+      stopped = true
+      clearInterval(interval)
       supabase.removeChannel(channel)
     }
   }, [sessionId])
