@@ -164,6 +164,24 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
           <div style={{ opacity: 0.6, fontSize: 14 }}>say hi! 👋</div>
         ) : (
           messages.map((msg) => {
+            if (msg.is_system === true) {
+              return (
+                <div
+                  key={String(msg.id)}
+                  style={{
+                    textAlign: 'center',
+                    fontSize: 12,
+                    fontStyle: 'italic',
+                    color: '#1F1A3D88',
+                    margin: '10px 0',
+                    padding: '0 12px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  — {String(msg.body ?? '')} —
+                </div>
+              )
+            }
             const mine = msg.sender_id === currentUserId
             const profileHref = otherUser.username ? `/profile/${otherUser.username}` : null
             return (

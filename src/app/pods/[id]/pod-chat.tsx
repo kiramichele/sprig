@@ -146,6 +146,24 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
           <div style={{ opacity: 0.6, fontSize: 14 }}>no messages yet — say hi! 👋</div>
         ) : (
           messages.map((msg) => {
+            if (msg.is_system) {
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    textAlign: 'center',
+                    fontSize: 12,
+                    fontStyle: 'italic',
+                    color: '#1F1A3D88',
+                    margin: '10px 0',
+                    padding: '0 12px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  — {msg.body} —
+                </div>
+              )
+            }
             const mine = msg.sender_id === currentUserId
             const sender = memberById[msg.sender_id] || {}
             const profileHref = sender?.username ? `/profile/${sender.username}` : null
