@@ -1,11 +1,18 @@
 ﻿import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { trySendWelcomeEmail } from '@/lib/email/welcome-trigger'
 import OnboardingWizard from './onboarding-wizard'
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // Safety net for the welcome email. If /auth/callback didn't fire (e.g.
+  // Supabase used a verify flow that bypassed our route), the email_log
+  // unique constraint still makes this a one-time send. Awaited so the
+  // serverless function doesn't terminate the request before the send.
+  await trySendWelcomeEmail(supabase)
 
   const profileRes = await supabase
     .from('profiles')
