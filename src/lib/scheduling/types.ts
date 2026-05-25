@@ -10,7 +10,6 @@
 export type RsvpResponse = 'yes' | 'no' | 'maybe'
 
 export type SessionRsvpRow = {
-  id: string
   session_id: string
   profile_id: string
   response: RsvpResponse
@@ -35,7 +34,6 @@ export interface SchedulingProfile {
 
 /** A session_rsvps row joined to the rsvper's profile. */
 export interface RsvpWithProfile {
-  id: string
   session_id: string
   profile_id: string
   response: RsvpResponse

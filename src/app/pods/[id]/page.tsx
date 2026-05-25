@@ -101,9 +101,10 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
   let proposals: Array<Record<string, unknown>> = []
   if (bareProposals.length) {
     const proposalIds = bareProposals.map((p) => p.id)
+    // session_rsvps has a composite PK (session_id, profile_id) — no `id` column.
     const rsvpsRes = await sb
       .from('session_rsvps')
-      .select('id, session_id, profile_id, response, responded_at, rsvper:profiles(id, display_name, photo_url, username)')
+      .select('session_id, profile_id, response, responded_at, rsvper:profiles(id, display_name, photo_url, username)')
       .in('session_id', proposalIds)
     if (rsvpsRes.error) console.error('pod page: session_rsvps query failed —', rsvpsRes.error)
     const rsvpsBySession = new Map<string, unknown[]>()
