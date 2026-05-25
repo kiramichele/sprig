@@ -12,10 +12,12 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Fire the welcome email best-effort. Email failures must not block
-      // the redirect — and the email_log unique constraint on
-      // (recipient_id, email_type, context_id) makes this a no-op for any
-      // user who's already received it (e.g. clicking the confirm link twice).
+      // Fire the welcome email. We AWAIT it intentionally — in a serverless
+      // function the runtime is allowed to suspend after the response is
+      // sent, so a fire-and-forget promise often never completes. The send
+      // adds ~300-700ms to a one-time email-confirm callback that the user
+      // already expects to feel like a small pause. Email failures must not
+      // block the redirect, hence the try/catch around the whole thing.
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sb: any = supabase
@@ -23,15 +25,13 @@ export async function GET(request: NextRequest) {
         const user = userData?.user
         if (user) {
           // Profile probably doesn't exist yet (onboarding is what creates
-          // it), but if it does we'll use the name for a warmer greeting.
+          // it). The welcome template handles a null name gracefully.
           const { data: profile } = await sb
             .from('profiles')
             .select('display_name')
             .eq('id', user.id)
             .maybeSingle()
-          // Don't await — let the email send in the background so the user
-          // doesn't sit on the callback while Resend responds.
-          sendNotificationEmail({
+          const result = await sendNotificationEmail({
             recipientId: user.id,
             emailType: 'welcome',
             contextId: user.id,
@@ -40,12 +40,13 @@ export async function GET(request: NextRequest) {
               recipientName: profile?.display_name ?? null,
               homeUrl: `${origin}/home`,
             }),
-          }).catch((err) => {
-            console.error('auth/callback: welcome email failed —', err)
           })
+          if (!result.sent && result.reason !== 'already sent') {
+            console.error('auth/callback: welcome email not sent —', result.reason)
+          }
         }
       } catch (err) {
-        console.error('auth/callback: welcome email setup failed —', err)
+        console.error('auth/callback: welcome email failed —', err)
       }
       return NextResponse.redirect(`${origin}${next}`)
     }

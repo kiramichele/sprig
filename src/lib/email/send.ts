@@ -72,13 +72,18 @@ export async function sendNotificationEmail(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createAdminClient() as any
 
-  const { data: recipient, error: recipientError } = await supabase
+  // A profile row may not exist yet — e.g. the welcome email fires right
+  // after email confirmation, BEFORE onboarding creates the profile. Use
+  // maybeSingle and only bail when a row *does* exist and is soft-deleted.
+  // The auth lookup below is the real source of truth for "is this account
+  // active and has an email on file."
+  const { data: recipient } = await supabase
     .from('profiles')
     .select('id, deleted_at')
     .eq('id', params.recipientId)
-    .single()
-  if (recipientError || !recipient || recipient.deleted_at) {
-    return { sent: false, reason: 'recipient not found or deactivated' }
+    .maybeSingle()
+  if (recipient?.deleted_at) {
+    return { sent: false, reason: 'recipient deactivated' }
   }
 
   const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(
