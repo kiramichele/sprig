@@ -5,6 +5,7 @@ import BasicInfoSection from './sections/basic-info'
 import InterestsSection from './sections/interests'
 import FriendshipStyleSection from './sections/friendship-style'
 import SensoryPrefsSection from './sections/sensory-prefs'
+import NotificationsSection from './sections/notifications'
 import AccountSection from './sections/account'
 
 interface CatalogInterest {
@@ -44,6 +45,13 @@ interface SensoryShape {
   prefers_video_off_ok: boolean | null
 }
 
+interface NotificationPrefsShape {
+  email_pod_matched: boolean | null
+  email_session_reminders: boolean | null
+  email_friend_requests: boolean | null
+  email_pod_chat_unlocked: boolean | null
+}
+
 interface Props {
   userId: string
   userEmail: string | null
@@ -52,6 +60,7 @@ interface Props {
   profileInterests: ProfileInterestSelection[]
   friendshipStyle: FriendshipStyleShape | null
   sensoryPrefs: SensoryShape | null
+  notificationPrefs: NotificationPrefsShape | null
   pendingRequestCount: number
 }
 
@@ -63,6 +72,7 @@ export default function SettingsContent({
   profileInterests,
   friendshipStyle,
   sensoryPrefs,
+  notificationPrefs,
   pendingRequestCount,
 }: Props) {
   return (
@@ -93,6 +103,7 @@ export default function SettingsContent({
           />
           <FriendshipStyleSection userId={userId} initial={friendshipStyle} />
           <SensoryPrefsSection userId={userId} initial={sensoryPrefs} />
+          <NotificationsSection userId={userId} initial={notificationPrefs} />
           <AccountSection userId={userId} userEmail={userEmail} />
         </div>
       </div>

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import FriendRequestModal from './friend-request-modal'
 
 export interface Friendship {
@@ -42,12 +41,13 @@ export default function FriendRequestButton({
     setBusy(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const { error: updateError } = await supabase
-        .from('friendships')
-        .update({ status })
-        .eq('id', friendship.id)
-      if (updateError) throw updateError
+      const res = await fetch('/api/friends/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendshipId: friendship.id, response: status }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload?.error || 'update failed')
       setFriendship({ ...friendship, status })
       router.refresh()
     } catch (err) {
@@ -70,7 +70,6 @@ export default function FriendRequestButton({
             targetUserId={targetUserId}
             targetDisplayName={targetDisplayName}
             podId={podId}
-            currentUserId={currentUserId}
             onClose={() => setModalOpen(false)}
             onSent={(f) => {
               setFriendship(f)

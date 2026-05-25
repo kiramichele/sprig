@@ -1,14 +1,12 @@
 "use client"
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { Friendship } from './friend-request-button'
 
 interface Props {
   targetUserId: string
   targetDisplayName: string
   podId: string
-  currentUserId: string
   onClose: () => void
   onSent: (friendship: Friendship) => void
 }
@@ -17,7 +15,6 @@ export default function FriendRequestModal({
   targetUserId,
   targetDisplayName,
   podId,
-  currentUserId,
   onClose,
   onSent,
 }: Props) {
@@ -33,29 +30,21 @@ export default function FriendRequestModal({
     setSending(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const { data, error: insertError } = await supabase
-        .from('friendships')
-        .insert({
-          requester_id: currentUserId,
-          addressee_id: targetUserId,
-          request_note: trimmed,
-          origin_pod_id: podId,
-        })
-        .select('id, requester_id, addressee_id, status')
-        .single()
-
-      if (insertError) {
-        // RLS rejects requests between people who haven't shared a pod
-        if (insertError.code === '42501' || /row-level security/i.test(insertError.message)) {
-          setError("you can only send friend requests to people you've shared a pod with.")
-        } else {
-          setError('could not send the request — try again')
-        }
+      const res = await fetch('/api/friends/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addresseeId: targetUserId,
+          podId,
+          note: trimmed,
+        }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(payload?.error || 'could not send the request — try again')
         return
       }
-
-      onSent(data as Friendship)
+      onSent(payload.friendship as Friendship)
       onClose()
     } catch (err) {
       console.error('friend request: send failed —', err)

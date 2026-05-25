@@ -19,6 +19,7 @@ export default async function SettingsPage() {
     profileInterestsRes,
     friendshipStyleRes,
     sensoryRes,
+    notificationPrefsRes,
     pendingCountRes,
   ] = await Promise.all([
     sb.from('profiles').select('*').eq('id', user.id).single(),
@@ -26,6 +27,7 @@ export default async function SettingsPage() {
     sb.from('profile_interests').select('interest_id, intensity').eq('profile_id', user.id),
     sb.from('friendship_styles').select('*').eq('profile_id', user.id).maybeSingle(),
     sb.from('sensory_preferences').select('*').eq('profile_id', user.id).maybeSingle(),
+    sb.from('notification_preferences').select('*').eq('profile_id', user.id).maybeSingle(),
     sb
       .from('friendships')
       .select('*', { count: 'exact', head: true })
@@ -38,6 +40,7 @@ export default async function SettingsPage() {
   if (profileInterestsRes.error) console.error('settings: profile_interests query failed —', profileInterestsRes.error)
   if (friendshipStyleRes.error) console.error('settings: friendship_styles query failed —', friendshipStyleRes.error)
   if (sensoryRes.error) console.error('settings: sensory_preferences query failed —', sensoryRes.error)
+  if (notificationPrefsRes.error) console.error('settings: notification_preferences query failed —', notificationPrefsRes.error)
 
   return (
     <main
@@ -53,6 +56,7 @@ export default async function SettingsPage() {
         profileInterests={profileInterestsRes.data ?? []}
         friendshipStyle={friendshipStyleRes.data}
         sensoryPrefs={sensoryRes.data}
+        notificationPrefs={notificationPrefsRes.data}
         pendingRequestCount={pendingCountRes.count ?? 0}
       />
     </main>

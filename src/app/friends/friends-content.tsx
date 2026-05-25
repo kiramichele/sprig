@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 export interface FriendProfile {
   id: string
@@ -85,13 +84,17 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function updateStatus(id: string, status: string) {
+  async function updateStatus(id: string, status: 'accepted' | 'declined' | 'withdrawn') {
     setBusyId(id)
     setError(null)
     try {
-      const supabase = createClient()
-      const { error: updateError } = await supabase.from('friendships').update({ status }).eq('id', id)
-      if (updateError) throw updateError
+      const res = await fetch('/api/friends/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendshipId: id, response: status }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload?.error || 'update failed')
       router.refresh()
     } catch (err) {
       console.error('friends: update failed —', err)

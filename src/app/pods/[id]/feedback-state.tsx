@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import MemberCard from './member-card'
 
 export default function FeedbackState({ pod, members, currentMember, currentUserId, podId }: any) {
@@ -20,18 +19,17 @@ export default function FeedbackState({ pod, members, currentMember, currentUser
     setLoading(choice)
     setError(null)
     try {
-      // submit_pod_feedback is a Postgres RPC; cast to any since it isn't in the
-      // generated database types.
-      const supabase: any = createClient()
-      const { error: rpcError } = await supabase.rpc('submit_pod_feedback', {
-        p_pod_id: podId,
-        p_wants_to_continue: choice,
+      const res = await fetch(`/api/pods/${podId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wantsToContinue: choice }),
       })
-      if (rpcError) throw rpcError
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload?.error || 'feedback failed')
       // re-render with the new pod_member / pod state (may land on continuing)
       router.refresh()
     } catch (err) {
-      console.error('feedback: submit_pod_feedback failed —', err)
+      console.error('feedback: submit failed —', err)
       setError('couldn’t save your answer — try again')
       setLoading(null)
     }

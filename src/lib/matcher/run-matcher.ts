@@ -1,11 +1,23 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { sendNotificationEmail, appUrl } from '@/lib/email/send'
+import PodMatchedEmail from '@/lib/email/templates/pod-matched'
 import { formPods } from './algorithm'
 import type { MatcherDatabase, MatcherResult, Pair, Pod, PoolUser } from './types'
 
 const DEFAULT_POD_SIZE = 4
 const SESSION_DURATION_MINUTES = 30
 const EASTERN_TZ = 'America/New_York'
+
+const SESSION_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short',
+  timeZone: EASTERN_TZ,
+})
 
 /**
  * UTC offset (wall-clock minus UTC, in ms) for a timezone at a given instant.
@@ -219,6 +231,55 @@ export async function runMatcher(): Promise<MatcherResult> {
 
       for (const profileId of pod.members) matchedProfileIds.add(profileId)
       writtenPods.push(pod)
+
+      // Fire pod_matched emails. Each send is independently wrapped so a
+      // failure to email one person doesn't keep the others from getting
+      // notified — and a total email outage never aborts the matcher.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dbAny: any = db
+        const { data: profileRows } = await dbAny
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', pod.members)
+        const nameById = new Map<string, string>()
+        for (const p of (profileRows as { id: string; display_name: string | null }[]) || []) {
+          nameById.set(p.id, p.display_name || 'friend')
+        }
+
+        const podName = pod.primary_interest
+          ? `${pod.primary_interest} pod`
+          : 'sprig pod'
+        const sessionTimeDisplay = SESSION_TIME_FORMAT.format(new Date(firstSessionAt))
+        const podPath = `/pods/${createdPodId}`
+
+        for (const recipientId of pod.members) {
+          const recipientName = (nameById.get(recipientId) || 'friend').split(' ')[0]
+          const memberNames = pod.members
+            .filter((id) => id !== recipientId)
+            .map((id) => (nameById.get(id) || 'a podmate').split(' ')[0])
+          try {
+            await sendNotificationEmail({
+              recipientId,
+              emailType: 'pod_matched',
+              contextId: createdPodId as string,
+              subject: "you've been matched! 🌱",
+              template: PodMatchedEmail({
+                recipientName,
+                podName,
+                primaryInterest: pod.primary_interest || 'sprig',
+                memberNames,
+                sessionTime: sessionTimeDisplay,
+                podUrl: appUrl(podPath),
+              }),
+            })
+          } catch (emailErr) {
+            console.error('runMatcher: pod_matched email failed for', recipientId, '—', emailErr)
+          }
+        }
+      } catch (notifyErr) {
+        console.error('runMatcher: failed to send pod_matched emails —', notifyErr)
+      }
     } catch (error) {
       console.error('runMatcher: failed to write a pod, skipping —', error)
       // best-effort rollback of a partially-written pod
