@@ -83,6 +83,8 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
   const router = useRouter()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // friendshipId currently in the unfriend-confirm state
+  const [confirmingUnfriendId, setConfirmingUnfriendId] = useState<string | null>(null)
 
   async function updateStatus(id: string, status: 'accepted' | 'declined' | 'withdrawn') {
     setBusyId(id)
@@ -99,6 +101,23 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
     } catch (err) {
       console.error('friends: update failed —', err)
       setError('could not update — try again')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function unfriend(friendshipId: string) {
+    setBusyId(friendshipId)
+    setError(null)
+    try {
+      const res = await fetch(`/api/friends/${friendshipId}`, { method: 'DELETE' })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload?.error || 'unfriend failed')
+      setConfirmingUnfriendId(null)
+      router.refresh()
+    } catch (err) {
+      console.error('friends: unfriend failed —', err)
+      setError('could not unfriend — try again')
     } finally {
       setBusyId(null)
     }
@@ -262,13 +281,42 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
                   </div>
                 </>
               )}
-              <a
-                href={`/messages/${f.friendshipId}`}
-                className="chunky"
-                style={{ background: '#4D96FF', color: '#1F1A3D', borderRadius: 10, padding: '7px 14px', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}
-              >
-                open chat
-              </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <a
+                  href={`/messages/${f.friendshipId}`}
+                  className="chunky"
+                  style={{ background: '#4D96FF', color: '#1F1A3D', borderRadius: 10, padding: '7px 14px', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}
+                >
+                  open chat
+                </a>
+                {confirmingUnfriendId === f.friendshipId ? (
+                  <>
+                    <button
+                      onClick={() => unfriend(f.friendshipId)}
+                      disabled={busyId === f.friendshipId}
+                      className="chunky"
+                      style={{ background: '#B00020', color: 'white', borderRadius: 10, padding: '7px 12px', fontWeight: 700, fontSize: 12 }}
+                    >
+                      {busyId === f.friendshipId ? 'removing…' : 'confirm'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmingUnfriendId(null)}
+                      disabled={busyId === f.friendshipId}
+                      style={{ background: 'transparent', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: 0.6 }}
+                    >
+                      cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setConfirmingUnfriendId(f.friendshipId)}
+                    title="unfriend — they won't be notified"
+                    style={{ background: 'transparent', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: 0.55, textDecoration: 'underline' }}
+                  >
+                    unfriend
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

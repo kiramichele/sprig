@@ -80,10 +80,21 @@ export default async function HomePage() {
     .gt('available_until', now)
   if (availabilityError) console.error('home: matching_availability query failed —', availabilityError)
 
+  // Show the widen offer if the user has cycled through twice without a match
+  // and we haven't already asked them this cycle.
+  const openSignal = Array.isArray(availability) && availability.length > 0
+    ? availability[0]
+    : null
+  const showWidenOffer =
+    !!openSignal &&
+    (openSignal.cycles_attempted ?? 0) >= 2 &&
+    openSignal.widen_offered_at === null &&
+    openSignal.widen_declined !== true
+
   return (
     <main className="min-h-screen" style={{ background: '#FFF6E5', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Sans:wght@400;500;600;700&display=swap'); .display { font-family: 'Caprasimo', Georgia, serif; }`}</style>
-      <HomeContent profile={profile} status={status} pods={pods} sessions={sessions} availability={availability} pendingRequestCount={pendingRequestCount ?? 0} />
+      <HomeContent profile={profile} status={status} pods={pods} sessions={sessions} availability={availability} showWidenOffer={showWidenOffer} pendingRequestCount={pendingRequestCount ?? 0} />
     </main>
   )
 }

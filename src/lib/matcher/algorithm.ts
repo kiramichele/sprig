@@ -3,6 +3,10 @@ import type { PoolUser, Pair, Pod } from './types'
 // Tunable thresholds for pod formation.
 const SEED_FLOOR = 30 // a seed pair must score at least this to start a pod
 const GROW_FLOOR = 40 // an added member must score at least this with every member
+// Relaxed thresholds — applied to any pair / candidate-link that involves at
+// least one user who opted into "widen the net" after several unmatched cycles.
+const SEED_FLOOR_WIDENED = 20
+const GROW_FLOOR_WIDENED = 30
 const MIN_POD = 3
 const MAX_POD = 5
 
@@ -52,6 +56,11 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
     userPrefs.set(user.profile_id, user)
   }
 
+  // Quick widened-membership check. We relax floors when ANY of the people
+  // being compared opted in to widening — that one user's loosening shouldn't
+  // require everyone else to be widened too.
+  const isWidened = (id: string): boolean => userPrefs.get(id)?.widened === true
+
   // 3. highest scores first. Tie-break by ids so this is a *total* order —
   //    the same pairs always sort the same way regardless of input order.
   const sortedPairs = [...pairs].sort((a, b) => {
@@ -76,7 +85,9 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
     const seedB = seed.user_b
 
     if (matched.has(seedA) || matched.has(seedB)) continue
-    if (seed.score < SEED_FLOOR) continue
+    const seedFloor =
+      isWidened(seedA) || isWidened(seedB) ? SEED_FLOOR_WIDENED : SEED_FLOOR
+    if (seed.score < seedFloor) continue
 
     const prefsA = userPrefs.get(seedA)
     const prefsB = userPrefs.get(seedB)
@@ -94,7 +105,9 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
       )
     )
 
-    // gather candidates that clear GROW_FLOOR with BOTH seeds
+    // gather candidates that clear the grow floor with BOTH seeds. The floor
+    // relaxes per-edge: if either endpoint of that edge is widened, we use the
+    // relaxed value.
     const candidates: { id: string; weakestLink: number }[] = []
     for (const user of pool) {
       const id = user.profile_id
@@ -104,7 +117,11 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
       const withA = scoreBetween(id, seedA)
       const withB = scoreBetween(id, seedB)
       if (withA === null || withB === null) continue
-      if (withA < GROW_FLOOR || withB < GROW_FLOOR) continue
+      const floorA =
+        isWidened(id) || isWidened(seedA) ? GROW_FLOOR_WIDENED : GROW_FLOOR
+      const floorB =
+        isWidened(id) || isWidened(seedB) ? GROW_FLOOR_WIDENED : GROW_FLOOR
+      if (withA < floorA || withB < floorB) continue
 
       candidates.push({ id, weakestLink: Math.min(withA, withB) })
     }
@@ -116,12 +133,16 @@ export function formPods(pool: PoolUser[], pairs: Pair[]): Pod[] {
       return x.id < y.id ? -1 : x.id > y.id ? 1 : 0
     })
 
-    // grow the pod one member at a time
+    // grow the pod one member at a time. Same per-edge relaxation as candidate
+    // gathering — a widened candidate (or widened existing member) gets the
+    // softer floor on that link.
     for (const candidate of candidates) {
       if (pod.length >= targetSize) break
       const clearsEveryMember = pod.every((member) => {
         const score = scoreBetween(candidate.id, member)
-        return score !== null && score >= GROW_FLOOR
+        const floor =
+          isWidened(candidate.id) || isWidened(member) ? GROW_FLOOR_WIDENED : GROW_FLOOR
+        return score !== null && score >= floor
       })
       if (clearsEveryMember) pod.push(candidate.id)
     }

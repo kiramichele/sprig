@@ -117,7 +117,7 @@ export async function runMatcher(): Promise<MatcherResult> {
   // 1. read the open pool
   const { data: poolData, error: poolError } = await db
     .from('matching_availability')
-    .select('id, profile_id, preferred_pod_size, cycles_attempted')
+    .select('id, profile_id, preferred_pod_size, cycles_attempted, widened')
     .eq('status', 'open')
     .gt('available_until', nowIso)
     .order('profile_id', { ascending: true }) // deterministic pool order
@@ -132,7 +132,7 @@ export async function runMatcher(): Promise<MatcherResult> {
     profile_id: row.profile_id,
     preferred_pod_size: row.preferred_pod_size ?? DEFAULT_POD_SIZE,
     availability_id: row.id,
-    widened: false,
+    widened: row.widened === true,
   }))
 
   // need at least 3 people to form anything

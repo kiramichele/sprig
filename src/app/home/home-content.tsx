@@ -8,7 +8,7 @@ import ActiveState from './active-state'
 import JoinPoolModal from './join-pool-modal'
 
 export default function HomeContent(props: any) {
-  const { profile, status, pods, sessions, availability, pendingRequestCount } = props
+  const { profile, status, pods, sessions, availability, showWidenOffer, pendingRequestCount } = props
   const [modalOpen, setModalOpen] = useState(false)
   const safePods = Array.isArray(pods) ? pods : []
   const safeAvailability = Array.isArray(availability) ? availability : []
@@ -24,7 +24,7 @@ export default function HomeContent(props: any) {
         {activePodCount > 0 ? (
           <ActiveState profile={profile} pods={pods} sessions={sessions} onJoin={() => setModalOpen(true)} />
         ) : openAvailabilityCount > 0 ? (
-          <WaitingState profile={profile} availability={availability} onCancel={() => window.location.reload()} onJoin={() => setModalOpen(true)} />
+          <WaitingState profile={profile} availability={availability} showWidenOffer={!!showWidenOffer} onCancel={() => window.location.reload()} onJoin={() => setModalOpen(true)} />
         ) : (
           <IdleState profile={profile} onJoin={() => setModalOpen(true)} />
         )}

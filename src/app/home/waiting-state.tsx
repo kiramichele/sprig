@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import WidenNetCard from './widen-net-card'
 
-export default function WaitingState({ profile, availability, onJoin }: any) {
+export default function WaitingState({ profile, availability, showWidenOffer, onJoin }: any) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,6 +44,10 @@ export default function WaitingState({ profile, availability, onJoin }: any) {
       <h1 className="display text-4xl mb-3">we're looking for your pod 🔎</h1>
       <p className="mb-4">we're matching you with 2-4 other people around your interests. this can take anywhere from a few hours to a few days depending on who's available.</p>
 
+      {showWidenOffer && signal?.id ? (
+        <WidenNetCard availabilityId={signal.id} />
+      ) : null}
+
       {signal ? (
         <div style={{ borderRadius: 12, padding: 16, background: 'white', border: '1px solid rgba(0,0,0,0.04)' }}>
           <div>you're available until <strong suppressHydrationWarning>{new Date(signal.available_until).toLocaleString()}</strong></div>
@@ -64,6 +69,11 @@ export default function WaitingState({ profile, availability, onJoin }: any) {
           <li>add or tidy your interests</li>
           <li>invite a friend</li>
         </ul>
+        {signal?.widened ? (
+          <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, opacity: 0.8 }}>
+            🌐 we&apos;ve widened your match search for this cycle.
+          </div>
+        ) : null}
       </div>
     </section>
   )

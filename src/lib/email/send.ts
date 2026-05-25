@@ -154,10 +154,27 @@ export async function sendNotificationEmail(
  *   1. NEXT_PUBLIC_APP_URL (preferred — set this in Vercel)
  *   2. VERCEL_URL (Vercel sets this on preview/prod deployments)
  *   3. localhost fallback for `npm run dev`
+ *
+ * In production we log a one-time error if NEXT_PUBLIC_APP_URL is missing,
+ * because falling back to VERCEL_URL means emails will link to a per-deploy
+ * hostname (xyz.vercel.app) which (a) Gmail flags as a sender/link domain
+ * mismatch and (b) breaks when the deploy is replaced.
  */
+let warnedMissingAppUrl = false
 export function appUrl(path: string): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL
+  if (!explicit && process.env.VERCEL_ENV === 'production' && !warnedMissingAppUrl) {
+    warnedMissingAppUrl = true
+    console.error(
+      '[appUrl] NEXT_PUBLIC_APP_URL is not set in production. Falling back to ' +
+        'VERCEL_URL — email links will use a per-deploy hostname (e.g. ' +
+        'xyz.vercel.app) and Gmail will likely insert a redirect-warning ' +
+        'interstitial. Set NEXT_PUBLIC_APP_URL in Vercel → Settings → ' +
+        'Environment Variables (Production).'
+    )
+  }
   const base =
-    process.env.NEXT_PUBLIC_APP_URL ||
+    explicit ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
     'http://localhost:3000'
   const trimmed = base.replace(/\/+$/, '')
