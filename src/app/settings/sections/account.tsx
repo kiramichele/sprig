@@ -77,7 +77,10 @@ export default function AccountSection({ userId, userEmail }: Props) {
       </section>
 
       {showPasswordModal ? (
-        <PasswordModal onClose={() => setShowPasswordModal(false)} />
+        <PasswordModal
+          userEmail={userEmail}
+          onClose={() => setShowPasswordModal(false)}
+        />
       ) : null}
       {showDeactivateModal ? (
         <DeactivateModal
@@ -93,7 +96,13 @@ export default function AccountSection({ userId, userEmail }: Props) {
   )
 }
 
-function PasswordModal({ onClose }: { onClose: () => void }) {
+function PasswordModal({
+  userEmail,
+  onClose,
+}: {
+  userEmail: string | null
+  onClose: () => void
+}) {
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -112,9 +121,31 @@ function PasswordModal({ onClose }: { onClose: () => void }) {
       setError("new passwords don't match")
       return
     }
+    if (!userEmail) {
+      setError('cannot verify current password — please sign out and use "forgot password" instead')
+      return
+    }
+    if (next === current) {
+      setError('new password must be different from current password')
+      return
+    }
     setBusy(true)
     try {
       const supabase = createClient()
+      // Supabase doesn't expose a "verify password" RPC, so we re-authenticate
+      // with the current password to confirm the user actually knows it before
+      // letting them set a new one. signInWithPassword refreshes the session
+      // for the same user, so it's safe to call here.
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: current,
+      })
+      if (verifyError) {
+        setError('current password is incorrect')
+        setBusy(false)
+        return
+      }
+
       const { error: updateError } = await supabase.auth.updateUser({ password: next })
       if (updateError) throw updateError
       setSuccess(true)
