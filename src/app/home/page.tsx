@@ -46,17 +46,23 @@ export default async function HomePage() {
 
   let pods: any[] = []
   if (podIds.length) {
+    // Exclude wound-down pods so the home page doesn't keep showing a pod the
+    // user can't actually do anything with. Matches the status filter that
+    // user_current_status.active_pod_count uses.
     const { data, error: podsError } = await sb
       .from('pods')
       .select('*, primary_interest:interests(name)')
       .in('id', podIds)
+      .not('status', 'in', '(dissolved,canceled)')
     if (podsError) console.error('home: pods query failed —', podsError)
     pods = data || []
   }
 
-  // upcoming sessions
+  // upcoming sessions — scope to *active* pod ids so a recently-dissolved
+  // pod can't leave a stale session in the upcoming list.
+  const activePodIds = pods.map((p: any) => p.id)
   let sessions: any[] = []
-  if (podIds.length) {
+  if (activePodIds.length) {
     // 15-minute grace window: sessions that started up to 15 minutes ago still
     // appear here so latecomers see the join prompt. Pairs with the join-call
     // logic that activates within ~10 minutes of the scheduled time.
@@ -64,7 +70,7 @@ export default async function HomePage() {
     const { data, error: sessionsError } = await sb
       .from('pod_sessions')
       .select('*')
-      .in('pod_id', podIds)
+      .in('pod_id', activePodIds)
       .eq('status', 'scheduled')
       .gt('scheduled_for', cutoff)
       .order('scheduled_for', { ascending: true })

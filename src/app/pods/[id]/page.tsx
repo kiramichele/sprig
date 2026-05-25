@@ -57,6 +57,36 @@ export default async function PodPage({ params }: { params: Promise<{ id: string
     )
   }
 
+  // Dissolved / canceled pods: short-circuit before loading members, chat, or
+  // proposals. The active UI (chat, RSVP, propose-session) shouldn't be
+  // available on a pod that's wound down, even for users who were members.
+  if (pod.status === 'dissolved' || pod.status === 'canceled') {
+    const interestName = (pod.primary_interest as { name?: string | null } | null)?.name
+    const name = pod.name || (interestName ? `${interestName} pod` : 'this pod')
+    return (
+      <main className="min-h-screen" style={{ background: '#FFF6E5', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <style>{FONT_STYLE}</style>
+        <TopNav profile={profile || { id: user.id }} pendingRequestCount={pendingRequestCount ?? 0} />
+        <div className="max-w-4xl mx-auto p-8">
+          <div style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '6px 6px 0 0 #1F1A3D', borderRadius: 16, padding: 32, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🌿</div>
+            <h1 className="display" style={{ fontSize: 28, marginBottom: 8 }}>this pod has wound down</h1>
+            <p style={{ opacity: 0.8, marginBottom: 20 }}>
+              the {name} doesn&apos;t have enough members to keep going. thanks for
+              sharing this space — your next pod is waiting.
+            </p>
+            <a
+              href="/home"
+              style={{ display: 'inline-block', background: '#FFD23F', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12, padding: '10px 20px', fontWeight: 700, textDecoration: 'none', color: '#1F1A3D' }}
+            >
+              ← back to home
+            </a>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   const [membersRes, sessionsRes, proposalsRes, threadRes] = await Promise.all([
     sb
       .from('pod_members')
