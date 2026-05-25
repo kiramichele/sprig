@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Friendship } from './friend-request-button'
 
 interface Props {
@@ -21,6 +22,13 @@ export default function FriendRequestModal({
   const [note, setNote] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Portal target — only resolved on the client. Without this, the modal
+  // renders inside <MemberCard>, whose `transform: rotate(...)` traps
+  // `position: fixed` and lets neighbor cards cover the modal.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const trimmed = note.trim()
   const valid = trimmed.length >= 5 && trimmed.length <= 300
@@ -54,7 +62,9 @@ export default function FriendRequestModal({
     }
   }
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -63,7 +73,7 @@ export default function FriendRequestModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 60,
+        zIndex: 200,
         padding: 16,
       }}
     >
@@ -105,6 +115,7 @@ export default function FriendRequestModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
