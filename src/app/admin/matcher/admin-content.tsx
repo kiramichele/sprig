@@ -58,9 +58,10 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
   const [showWipeConfirm, setShowWipeConfirm] = useState(false)
   const [wiping, setWiping] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [expiring, setExpiring] = useState(false)
 
   const secretMissing = !cronSecret
-  const busy = running || resetting || wiping || seeding
+  const busy = running || resetting || wiping || seeding || expiring
 
   async function runMatcher() {
     setRunning(true)
@@ -139,6 +140,39 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
       setActionError(err instanceof Error ? err.message : 'request failed')
     } finally {
       setSeeding(false)
+    }
+  }
+
+  async function expireProposals() {
+    setExpiring(true)
+    setActionError(null)
+    setResult(null)
+    setActionMessage(null)
+    try {
+      const res = await fetch('/api/cron/expire-proposals', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${cronSecret}` },
+      })
+      const json: {
+        ok?: boolean
+        error?: string
+        expired_count?: number
+        errors_count?: number
+      } = await res.json()
+      if (!res.ok || !json.ok) {
+        setActionError(json.error || `expire failed (HTTP ${res.status})`)
+      } else {
+        const errors = json.errors_count ?? 0
+        setActionMessage(
+          `expired ${json.expired_count ?? 0} proposal${json.expired_count === 1 ? '' : 's'}` +
+            (errors > 0 ? ` · ${errors} error${errors === 1 ? '' : 's'} (see server logs)` : '')
+        )
+        router.refresh()
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'request failed')
+    } finally {
+      setExpiring(false)
     }
   }
 
@@ -222,6 +256,15 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
             style={{ background: '#FFF6E5', borderRadius: 12, padding: '10px 20px', fontWeight: 700, fontSize: 15 }}
           >
             {resetting ? 'resetting…' : '↺ reset test pool'}
+          </button>
+          <button
+            onClick={expireProposals}
+            disabled={busy || secretMissing}
+            className="chunky"
+            title="cancel any proposed sessions whose deadline has passed and post a system message to their pod chats"
+            style={{ background: '#FFF6E5', borderRadius: 12, padding: '10px 20px', fontWeight: 700, fontSize: 15 }}
+          >
+            {expiring ? 'expiring…' : '⏰ expire proposals now'}
           </button>
         </div>
         <p style={{ fontSize: 12, opacity: 0.7, marginTop: 10 }}>
