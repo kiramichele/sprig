@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import MemberCard from './member-card'
 import SessionCard from './session-card'
+import LeavePodButton from './leave-pod-button'
 
 function relative(iso: string, nowMs: number) {
   const diff = new Date(iso).getTime() - nowMs
@@ -24,7 +25,7 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
   // a session stays "joinable-or-upcoming" until 10 minutes past its start, so
   // latecomers still see the join prompt (status flips to 'in_progress' once the
   // first person joins, and scheduled_for moves into the past).
-  const LATE_GRACE_MS = 10 * 60 * 1000
+  const LATE_GRACE_MS = 15 * 60 * 1000
   const upcoming = (sessions || [])
     .filter(
       (s: any) =>
@@ -90,6 +91,16 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
       <p style={{ fontSize: 13, opacity: 0.7, marginTop: 28 }}>
         this is a one-time meet. you&apos;ll only continue if everyone wants to.
       </p>
+
+      <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+        <LeavePodButton
+          podId={podId}
+          podName={name}
+          podStatus={pod?.status || 'scheduled'}
+          memberCount={members?.length ?? 0}
+          currentUserId={currentUserId}
+        />
+      </div>
     </section>
   )
 }

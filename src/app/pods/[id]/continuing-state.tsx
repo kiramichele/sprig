@@ -8,6 +8,7 @@ import SessionCard from './session-card'
 import PodChat from './pod-chat'
 import ProposeSessionModal from './propose-session-modal'
 import ProposedSessionCard from './proposed-session-card'
+import LeavePodButton from './leave-pod-button'
 import type { ProposedSession } from '@/lib/scheduling/types'
 
 export default function ContinuingState({ pod, members, sessions, proposals, currentUserId, podId, threadId }: any) {
@@ -65,8 +66,12 @@ export default function ContinuingState({ pod, members, sessions, proposals, cur
   const emoji = pod?.primary_interest?.emoji || '🌱'
   const name = pod?.name || (pod?.primary_interest?.name ? `${pod.primary_interest.name} pod` : 'your pod')
 
+  // 15-minute grace window so a session that's "starting now" or just barely
+  // started still shows up here for latecomers, instead of vanishing the
+  // moment scheduled_for slips into the past.
+  const LATE_GRACE_MS = 15 * 60 * 1000
   const upcoming = (sessions || [])
-    .filter((s: any) => s.status === 'scheduled' && new Date(s.scheduled_for).getTime() > now)
+    .filter((s: any) => s.status === 'scheduled' && new Date(s.scheduled_for).getTime() > now - LATE_GRACE_MS)
     .sort((a: any, b: any) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime())
   const next = upcoming[0] || null
 
@@ -141,6 +146,16 @@ export default function ContinuingState({ pod, members, sessions, proposals, cur
 
       <div className="pod-h2">pod chat</div>
       <PodChat threadId={threadId} currentUserId={currentUserId} members={members} />
+
+      <div style={{ marginTop: 32, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+        <LeavePodButton
+          podId={podId}
+          podName={name}
+          podStatus={pod?.status || 'continuing'}
+          memberCount={members?.length ?? 0}
+          currentUserId={currentUserId}
+        />
+      </div>
 
       {showProposeModal ? (
         <ProposeSessionModal

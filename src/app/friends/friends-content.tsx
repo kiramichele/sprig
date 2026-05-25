@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import RemoveFriendButton from './remove-friend-button'
 
 export interface FriendProfile {
   id: string
@@ -83,8 +84,6 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
   const router = useRouter()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // friendshipId currently in the unfriend-confirm state
-  const [confirmingUnfriendId, setConfirmingUnfriendId] = useState<string | null>(null)
 
   async function updateStatus(id: string, status: 'accepted' | 'declined' | 'withdrawn') {
     setBusyId(id)
@@ -101,23 +100,6 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
     } catch (err) {
       console.error('friends: update failed —', err)
       setError('could not update — try again')
-    } finally {
-      setBusyId(null)
-    }
-  }
-
-  async function unfriend(friendshipId: string) {
-    setBusyId(friendshipId)
-    setError(null)
-    try {
-      const res = await fetch(`/api/friends/${friendshipId}`, { method: 'DELETE' })
-      const payload = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(payload?.error || 'unfriend failed')
-      setConfirmingUnfriendId(null)
-      router.refresh()
-    } catch (err) {
-      console.error('friends: unfriend failed —', err)
-      setError('could not unfriend — try again')
     } finally {
       setBusyId(null)
     }
@@ -281,7 +263,7 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
                   </div>
                 </>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <a
                   href={`/messages/${f.friendshipId}`}
                   className="chunky"
@@ -289,33 +271,11 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
                 >
                   open chat
                 </a>
-                {confirmingUnfriendId === f.friendshipId ? (
-                  <>
-                    <button
-                      onClick={() => unfriend(f.friendshipId)}
-                      disabled={busyId === f.friendshipId}
-                      className="chunky"
-                      style={{ background: '#B00020', color: 'white', borderRadius: 10, padding: '7px 12px', fontWeight: 700, fontSize: 12 }}
-                    >
-                      {busyId === f.friendshipId ? 'removing…' : 'confirm'}
-                    </button>
-                    <button
-                      onClick={() => setConfirmingUnfriendId(null)}
-                      disabled={busyId === f.friendshipId}
-                      style={{ background: 'transparent', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: 0.6 }}
-                    >
-                      cancel
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setConfirmingUnfriendId(f.friendshipId)}
-                    title="unfriend — they won't be notified"
-                    style={{ background: 'transparent', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: 0.55, textDecoration: 'underline' }}
-                  >
-                    unfriend
-                  </button>
-                )}
+                <RemoveFriendButton
+                  friendshipId={f.friendshipId}
+                  otherUserName={f.friend.display_name || 'this friend'}
+                  onRemoved={() => router.refresh()}
+                />
               </div>
             </div>
           ))}

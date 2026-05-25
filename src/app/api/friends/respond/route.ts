@@ -46,8 +46,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'request not found' }, { status: 404 })
   }
 
-  if (response === 'withdrawn' && existing.requester_id !== user.id) {
-    return NextResponse.json({ error: 'only the sender can withdraw' }, { status: 403 })
+  // 'withdrawn' has two meanings:
+  //  - requester taking back a still-pending request
+  //  - either party unfriending an already-accepted connection
+  // So we require *either* party, regardless of the current status.
+  if (
+    response === 'withdrawn' &&
+    existing.requester_id !== user.id &&
+    existing.addressee_id !== user.id
+  ) {
+    return NextResponse.json({ error: 'not your friendship to withdraw' }, { status: 403 })
   }
   if (
     (response === 'accepted' || response === 'declined') &&

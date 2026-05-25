@@ -57,13 +57,16 @@ export default async function HomePage() {
   // upcoming sessions
   let sessions: any[] = []
   if (podIds.length) {
-    const now = new Date().toISOString()
+    // 15-minute grace window: sessions that started up to 15 minutes ago still
+    // appear here so latecomers see the join prompt. Pairs with the join-call
+    // logic that activates within ~10 minutes of the scheduled time.
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
     const { data, error: sessionsError } = await sb
       .from('pod_sessions')
       .select('*')
       .in('pod_id', podIds)
       .eq('status', 'scheduled')
-      .gt('scheduled_for', now)
+      .gt('scheduled_for', cutoff)
       .order('scheduled_for', { ascending: true })
       .limit(3)
     if (sessionsError) console.error('home: pod_sessions query failed —', sessionsError)
