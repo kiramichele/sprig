@@ -63,6 +63,9 @@ export default function InCall({
 
   const [floating, setFloating] = useState<FloatingReaction[]>([])
   const reactionSeq = useRef(0)
+  // Local-only view preference — each participant can collapse the prompt
+  // card to give the videos more room. Does NOT sync to other participants.
+  const [cardMinimized, setCardMinimized] = useState(false)
 
   function spawnReaction(emoji: string) {
     const id = reactionSeq.current++
@@ -161,70 +164,160 @@ export default function InCall({
         <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{timerLabel}</div>
       </div>
 
-      {/* participant video row */}
-      <div style={{ display: 'flex', gap: 12, padding: '14px 20px', overflowX: 'auto' }}>
-        {participantIds.map((id, i) => (
-          <VideoTile
-            key={id}
-            participantId={id}
-            isLocal={id === localId}
-            size={104}
-            rotate={(i % 3) - 1}
-          />
-        ))}
-      </div>
-
-      {/* center: round badge + prompt card */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '8px 20px 24px',
-          gap: 16,
-        }}
-      >
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            background: currentRound?.color_hex || '#FFD23F',
-            color: '#1F1A3D',
-            border: '2.5px solid #1F1A3D',
-            boxShadow: '4px 4px 0 0 #1F1A3D',
-            borderRadius: 999,
-            padding: '6px 16px',
-            fontWeight: 700,
-          }}
-        >
-          <span>{currentRound?.emoji || '🌱'}</span>
-          <span>{currentRound?.name || 'round'}</span>
-        </div>
-
-        <div
-          className="chunky"
-          style={{
-            background: '#FFF6E5',
-            color: '#1F1A3D',
-            borderRadius: 24,
-            padding: '40px 32px',
-            maxWidth: 620,
-            width: '100%',
-            textAlign: 'center',
-          }}
-        >
-          <div className="display" style={{ fontSize: 28, lineHeight: 1.3 }}>
-            {currentCard?.body || 'take a breath — the next prompt is on its way.'}
+      {!cardMinimized ? (
+        <>
+          {/* participant video row */}
+          <div style={{ display: 'flex', gap: 12, padding: '14px 20px', overflowX: 'auto' }}>
+            {participantIds.map((id, i) => (
+              <VideoTile
+                key={id}
+                participantId={id}
+                isLocal={id === localId}
+                size={104}
+                rotate={(i % 3) - 1}
+              />
+            ))}
           </div>
-        </div>
 
-        <div style={{ fontSize: 15 }}>
-          🎤 <strong>{speakerLabel}</strong> turn to share
-        </div>
-      </div>
+          {/* center: round badge + prompt card */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 20px 24px',
+              gap: 16,
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: currentRound?.color_hex || '#FFD23F',
+                color: '#1F1A3D',
+                border: '2.5px solid #1F1A3D',
+                boxShadow: '4px 4px 0 0 #1F1A3D',
+                borderRadius: 999,
+                padding: '6px 16px',
+                fontWeight: 700,
+              }}
+            >
+              <span>{currentRound?.emoji || '🌱'}</span>
+              <span>{currentRound?.name || 'round'}</span>
+            </div>
+
+            <div
+              className="chunky"
+              style={{
+                position: 'relative',
+                background: '#FFF6E5',
+                color: '#1F1A3D',
+                borderRadius: 24,
+                padding: '40px 32px',
+                maxWidth: 620,
+                width: '100%',
+                textAlign: 'center',
+              }}
+            >
+              <button
+                onClick={() => setCardMinimized(true)}
+                title="hide prompt to make videos bigger"
+                aria-label="minimize prompt card"
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 10,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  border: '2px solid #1F1A3D',
+                  background: 'white',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  lineHeight: 1,
+                  cursor: 'pointer',
+                  color: '#1F1A3D',
+                }}
+              >
+                −
+              </button>
+              <div className="display" style={{ fontSize: 28, lineHeight: 1.3 }}>
+                {currentCard?.body || 'take a breath — the next prompt is on its way.'}
+              </div>
+            </div>
+
+            <div style={{ fontSize: 15 }}>
+              🎤 <strong>{speakerLabel}</strong> turn to share
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* minimized prompt strip — just the round + an expand control. */}
+          <div style={{ padding: '10px 20px 0' }}>
+            <button
+              onClick={() => setCardMinimized(false)}
+              className="chunky"
+              title="show full prompt"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                background: currentRound?.color_hex || '#FFD23F',
+                color: '#1F1A3D',
+                borderRadius: 999,
+                padding: '6px 14px 6px 10px',
+                fontWeight: 700,
+                fontSize: 14,
+                maxWidth: '100%',
+                cursor: 'pointer',
+              }}
+            >
+              <span>{currentRound?.emoji || '🌱'}</span>
+              <span
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {currentCard?.body || currentRound?.name || 'tap to see prompt'}
+              </span>
+              <span aria-hidden style={{ fontWeight: 700, opacity: 0.8 }}>↥</span>
+            </button>
+          </div>
+
+          {/* big video grid — fills the freed central space */}
+          <div
+            style={{
+              flex: 1,
+              display: 'grid',
+              gap: 14,
+              padding: '14px 20px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              alignContent: 'center',
+              justifyItems: 'center',
+            }}
+          >
+            {participantIds.map((id, i) => (
+              <VideoTile
+                key={id}
+                participantId={id}
+                isLocal={id === localId}
+                size={240}
+                rotate={(i % 3) - 1}
+              />
+            ))}
+          </div>
+
+          <div style={{ padding: '0 20px 12px', fontSize: 14, textAlign: 'center' }}>
+            🎤 <strong>{speakerLabel}</strong> turn to share
+          </div>
+        </>
+      )}
 
       {/* bottom bar */}
       <div
