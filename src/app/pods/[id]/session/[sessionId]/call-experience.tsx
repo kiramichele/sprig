@@ -207,19 +207,38 @@ function CallRunner({ sessionId, podId, podName, podEmoji, members, currentUser 
     }
   }, [sessionState?.call_phase, podId, router, daily])
 
-  // Belt-and-suspenders: if Daily reports we've left or errored (typically
-  // because someone else ended the call and the room is now gone) and we
-  // haven't already navigated, route out cleanly. Having an 'error' listener
-  // also keeps Daily from raising it as unhandled.
+  // Belt-and-suspenders: if Daily reports we've truly left the meeting AFTER
+  // we successfully joined (typically because someone else ended the call and
+  // the room is now gone), route out cleanly. We gate on status === 'ready'
+  // so a transient blip during the initial connect doesn't bounce us back to
+  // the pod page before we've even seen the lobby.
   useDailyEvent('left-meeting', () => {
+    if (status !== 'ready') return
     if (!endedHandled.current) {
       endedHandled.current = true
       router.push(`/pods/${podId}`)
     }
   })
 
+  // Daily fires 'error' events for plenty of non-fatal conditions — camera or
+  // mic permission denied, slow track negotiation, codec warnings, transient
+  // websocket reconnects. Only the events flagged `fatal: true` are
+  // terminal. Logging the rest keeps them from surfacing as unhandled, but
+  // we DO NOT navigate away — the user keeps their place and can retry
+  // permissions or wait for the reconnect.
   useDailyEvent('error', (event) => {
-    console.warn('daily error event (treating as clean exit):', event)
+    // event shape: { action: 'error', errorMsg, error?: { type?, msg?, fatal? } }
+    const ev = event as unknown as {
+      fatal?: boolean
+      error?: { fatal?: boolean; type?: string }
+      errorMsg?: string
+    }
+    const fatal = ev.fatal === true || ev.error?.fatal === true
+    if (!fatal) {
+      console.warn('daily non-fatal error (staying in call):', event)
+      return
+    }
+    console.error('daily fatal error — leaving call:', event)
     if (!endedHandled.current) {
       endedHandled.current = true
       router.push(`/pods/${podId}`)

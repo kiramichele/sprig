@@ -43,6 +43,39 @@ export default function TopNav({
   const [open, setOpen] = useState(false)
   const [unreadDms, setUnreadDms] = useState(0)
 
+  // One-time timezone auto-detect. If the profile doesn't have a timezone
+  // set yet, write the browser's IANA zone (e.g. "America/Los_Angeles") so
+  // server-side email rendering can format times in the recipient's locale.
+  // Skips the write if the user already has one — settings can override.
+  useEffect(() => {
+    const userId = profile.id
+    if (!userId || typeof window === 'undefined') return
+    let cancelled = false
+    ;(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const supabase: any = createClient()
+        const { data: row } = await supabase
+          .from('profiles')
+          .select('timezone')
+          .eq('id', userId)
+          .single()
+        if (cancelled) return
+        if (row && !row.timezone) {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+          if (tz) {
+            await supabase.from('profiles').update({ timezone: tz }).eq('id', userId)
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [profile.id])
+
   // Unread DM count — fetched client-side and refreshed on every new message
   // arrival via realtime. Recomputes on navigation since TopNav re-mounts.
   useEffect(() => {

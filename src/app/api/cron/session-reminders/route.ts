@@ -21,15 +21,22 @@ import type { EmailType } from '@/lib/email/send'
 
 export const maxDuration = 60
 
-const SESSION_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-  timeZoneName: 'short',
-  timeZone: 'America/New_York',
-})
+const DEFAULT_TZ = 'America/New_York'
+
+/** Format a UTC timestamp in the recipient's timezone — they should see
+ *  "7:00 PM PST" not "10:00 PM EST" if they're in Pacific time. */
+function formatSessionTime(iso: string, tz: string | null | undefined): string {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    timeZone: tz || DEFAULT_TZ,
+  })
+  return fmt.format(new Date(iso))
+}
 
 interface SessionRow {
   id: string
@@ -43,7 +50,7 @@ interface SessionRow {
 
 interface MemberRow {
   profile_id: string
-  profile: { display_name: string | null } | null
+  profile: { display_name: string | null; timezone: string | null } | null
 }
 
 async function handle(request: NextRequest) {
@@ -124,9 +131,11 @@ async function handle(request: NextRequest) {
 
     for (const session of rows) {
       try {
+        // Include timezone per member so each recipient sees the session
+        // time in their own zone.
         const { data: members } = await db
           .from('pod_members')
-          .select('profile_id, profile:profiles(display_name)')
+          .select('profile_id, profile:profiles(display_name, timezone)')
           .eq('pod_id', session.pod_id)
           .is('left_at', null)
 
@@ -134,13 +143,13 @@ async function handle(request: NextRequest) {
         const podName =
           session.pods?.name ||
           (interestName ? `${interestName} pod` : 'your sprig pod')
-        const sessionTime = SESSION_TIME_FORMAT.format(new Date(session.scheduled_for))
         const podUrl = appUrl(`/pods/${session.pod_id}`)
         const callUrl = appUrl(`/pods/${session.pod_id}/session/${session.id}`)
 
         for (const m of (members as MemberRow[] | null) || []) {
           const recipientName =
             (m.profile?.display_name || 'friend').split(' ')[0]
+          const sessionTime = formatSessionTime(session.scheduled_for, m.profile?.timezone ?? null)
           try {
             const result = await sendNotificationEmail({
               recipientId: m.profile_id,

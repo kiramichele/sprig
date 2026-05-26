@@ -6,6 +6,7 @@ import InterestsSection from './sections/interests'
 import FriendshipStyleSection from './sections/friendship-style'
 import SensoryPrefsSection from './sections/sensory-prefs'
 import NotificationsSection from './sections/notifications'
+import TimezoneSection from './sections/timezone'
 import AccountSection from './sections/account'
 
 interface CatalogInterest {
@@ -27,6 +28,7 @@ interface ProfileShape {
   bio: string | null
   city: string | null
   photo_url: string | null
+  timezone?: string | null
 }
 
 interface FriendshipStyleShape {
@@ -103,6 +105,7 @@ export default function SettingsContent({
           />
           <FriendshipStyleSection userId={userId} initial={friendshipStyle} />
           <SensoryPrefsSection userId={userId} initial={sensoryPrefs} />
+          <TimezoneSection userId={userId} initial={profile?.timezone ?? null} />
           <NotificationsSection userId={userId} initial={notificationPrefs} />
           <AccountSection userId={userId} userEmail={userEmail} />
         </div>

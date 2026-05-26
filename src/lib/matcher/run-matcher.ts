@@ -9,15 +9,25 @@ const DEFAULT_POD_SIZE = 4
 const SESSION_DURATION_MINUTES = 30
 const EASTERN_TZ = 'America/New_York'
 
-const SESSION_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-  timeZoneName: 'short',
-  timeZone: EASTERN_TZ,
-})
+/**
+ * Format a UTC timestamp in the recipient's timezone. Falls back to Eastern
+ * if the user hasn't set one (auto-detect normally fills this on first
+ * authenticated visit — null here means a brand-new account that's never
+ * loaded the UI). Built per-call rather than module-scoped because each
+ * recipient gets their own timezone.
+ */
+function formatSessionTime(iso: string, tz: string | null | undefined): string {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    timeZone: tz || EASTERN_TZ,
+  })
+  return fmt.format(new Date(iso))
+}
 
 /**
  * UTC offset (wall-clock minus UTC, in ms) for a timezone at a given instant.
@@ -238,19 +248,22 @@ export async function runMatcher(): Promise<MatcherResult> {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dbAny: any = db
+        // Include timezone so each recipient sees the session time in their
+        // own zone, not whichever zone the server happens to be in.
         const { data: profileRows } = await dbAny
           .from('profiles')
-          .select('id, display_name')
+          .select('id, display_name, timezone')
           .in('id', pod.members)
         const nameById = new Map<string, string>()
-        for (const p of (profileRows as { id: string; display_name: string | null }[]) || []) {
+        const tzById = new Map<string, string | null>()
+        for (const p of (profileRows as { id: string; display_name: string | null; timezone: string | null }[]) || []) {
           nameById.set(p.id, p.display_name || 'friend')
+          tzById.set(p.id, p.timezone)
         }
 
         const podName = pod.primary_interest
           ? `${pod.primary_interest} pod`
           : 'sprig pod'
-        const sessionTimeDisplay = SESSION_TIME_FORMAT.format(new Date(firstSessionAt))
         const podPath = `/pods/${createdPodId}`
 
         for (const recipientId of pod.members) {
@@ -258,6 +271,7 @@ export async function runMatcher(): Promise<MatcherResult> {
           const memberNames = pod.members
             .filter((id) => id !== recipientId)
             .map((id) => (nameById.get(id) || 'a podmate').split(' ')[0])
+          const sessionTimeDisplay = formatSessionTime(firstSessionAt, tzById.get(recipientId) ?? null)
           try {
             await sendNotificationEmail({
               recipientId,
