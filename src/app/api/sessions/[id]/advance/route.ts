@@ -48,6 +48,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single()
     if (!session) return NextResponse.json({ error: 'session not found' }, { status: 404 })
 
+    // Pod's primary interest — used to bubble up interest-themed prompt
+    // cards over the generic pool when the pod has one in common.
+    const { data: podRow } = await admin
+      .from('pods')
+      .select('primary_interest_id')
+      .eq('id', session.pod_id)
+      .single()
+    const primaryInterestId = (podRow as { primary_interest_id: string | null } | null)
+      ?.primary_interest_id ?? null
+
     const { data: membership } = await admin
       .from('pod_members')
       .select('profile_id')
@@ -77,6 +87,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const nowIso = new Date().toISOString()
     const currentRound = allRounds.find((r) => r.slug === state.current_round_slug)
 
+    /**
+     * Pick a card for the given round. When the pod has a primary interest
+     * and there are themed cards for it in this round, prefer those — they
+     * make the call feel tailored ("for a ceramics pod, the warmup is about
+     * pottery"). Falls back to interest-agnostic cards (interest_id IS NULL)
+     * when no themed cards exist or all of them have already been used.
+     * `excludeId` skips the card currently on screen so "next card" doesn't
+     * land on the same prompt twice in a row.
+     */
+    function pickCardForRound(roundId: string, excludeId?: string | null): typeof allCards[number] | null {
+      const inRound = allCards.filter((c) => c.round_id === roundId)
+      const themed = primaryInterestId
+        ? inRound.filter((c) => c.interest_id === primaryInterestId)
+        : []
+      const generic = inRound.filter((c) => c.interest_id == null)
+
+      // Try themed first (excluding the current card), then generic, then
+      // any-in-round as a last resort if both pools were empty after exclusion.
+      const themedOthers = themed.filter((c) => c.id !== excludeId)
+      if (themedOthers.length) return pickRandom(themedOthers)
+      const genericOthers = generic.filter((c) => c.id !== excludeId)
+      if (genericOthers.length) return pickRandom(genericOthers)
+      if (themed.length) return pickRandom(themed)
+      if (generic.length) return pickRandom(generic)
+      return pickRandom(inRound)
+    }
+
     // Build the patch for the requested action.
     const patch: SessionDatabase['public']['Tables']['pod_session_state']['Update'] = {
       updated_at: nowIso,
@@ -88,12 +125,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } else if (action === 'rotate_speaker') {
       patch.current_speaker_id = nextSpeaker(memberIds, state.current_speaker_id)
     } else if (action === 'next_card') {
-      const roundCards = currentRound
-        ? allCards.filter((c) => c.round_id === currentRound.id)
-        : []
-      const others = roundCards.filter((c) => c.id !== state.current_card_id)
-      const next = pickRandom(others.length ? others : roundCards)
-      patch.current_card_id = next?.id ?? state.current_card_id
+      if (currentRound) {
+        const next = pickCardForRound(currentRound.id, state.current_card_id)
+        patch.current_card_id = next?.id ?? state.current_card_id
+      }
       patch.current_speaker_id = nextSpeaker(memberIds, state.current_speaker_id)
     } else if (action === 'next_round') {
       const order = currentRound?.display_order ?? 0
@@ -101,9 +136,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .filter((r) => r.display_order > order)
         .sort((a, b) => a.display_order - b.display_order)[0]
       if (nextRound) {
-        const roundCards = allCards.filter((c) => c.round_id === nextRound.id)
         patch.current_round_slug = nextRound.slug
-        patch.current_card_id = pickRandom(roundCards)?.id ?? null
+        patch.current_card_id = pickCardForRound(nextRound.id)?.id ?? null
         patch.round_started_at = nowIso
         patch.current_speaker_id = nextSpeaker(memberIds, state.current_speaker_id)
       } else {
@@ -113,9 +147,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } else if (action === 'skip_to_wrap') {
       const wrapRound = allRounds.find((r) => r.slug === 'wrap')
       if (wrapRound) {
-        const roundCards = allCards.filter((c) => c.round_id === wrapRound.id)
         patch.current_round_slug = wrapRound.slug
-        patch.current_card_id = pickRandom(roundCards)?.id ?? null
+        patch.current_card_id = pickCardForRound(wrapRound.id)?.id ?? null
         patch.round_started_at = nowIso
       }
     }

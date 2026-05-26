@@ -104,14 +104,16 @@ export default function StepAvailability({ userId, onComplete }: Props) {
         <p className="text-sm opacity-70">loading…</p>
       ) : (
         <>
+          {/* Planner-style layout: days across the top, time-of-day rows
+              down the side — what people expect from a calendar grid. */}
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 6 }}>
               <thead>
                 <tr>
                   <th />
-                  {WINDOWS.map((w) => (
+                  {DAYS.map((d) => (
                     <th
-                      key={w}
+                      key={d}
                       style={{
                         fontSize: 11,
                         fontWeight: 700,
@@ -123,14 +125,14 @@ export default function StepAvailability({ userId, onComplete }: Props) {
                         color: '#1F1A3D',
                       }}
                     >
-                      {WINDOW_LABEL[w]}
+                      {DAY_LABEL[d]}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {DAYS.map((d) => (
-                  <tr key={d}>
+                {WINDOWS.map((w) => (
+                  <tr key={w}>
                     <th
                       style={{
                         fontSize: 12,
@@ -140,13 +142,13 @@ export default function StepAvailability({ userId, onComplete }: Props) {
                         opacity: 0.7,
                         padding: '0 8px 0 0',
                         textAlign: 'right',
-                        width: 50,
+                        width: 78,
                         color: '#1F1A3D',
                       }}
                     >
-                      {DAY_LABEL[d]}
+                      {WINDOW_LABEL[w]}
                     </th>
-                    {WINDOWS.map((w) => {
+                    {DAYS.map((d) => {
                       const token = `${d}_${w}` as SlotToken
                       const on = selected.has(token)
                       return (
