@@ -106,7 +106,7 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
       <style>{`
         .chunky { border:2.5px solid #1F1A3D; box-shadow:4px 4px 0 0 #1F1A3D; transition:all .12s ease; }
         .chunky:hover { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #1F1A3D; }
@@ -115,7 +115,7 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
         .pod-h2 { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.16em; color:#1F1A3D; opacity:.55; margin:28px 0 12px; }
       `}</style>
 
-      <h1 className="display" style={{ fontSize: 40, marginBottom: 4 }}>your people 🌿</h1>
+      <h1 className="display text-3xl sm:text-4xl mb-1">your people 🌿</h1>
       <p style={{ opacity: 0.8 }}>friends you&apos;ve made through your pods.</p>
 
       {error ? <div style={{ fontSize: 13, color: '#B00020', fontWeight: 700, marginTop: 8 }}>{error}</div> : null}

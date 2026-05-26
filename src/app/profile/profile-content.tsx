@@ -111,9 +111,9 @@ export default function ProfileContent({ profile, interests, selectedIds }: Prop
         .chunky:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 #1F1A3D; }
       `}</style>
 
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="mb-10">
-          <div className="display text-5xl mb-2">your profile</div>
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-8 sm:mb-10">
+          <div className="display text-3xl sm:text-5xl mb-2">your profile</div>
           <p className="text-sm opacity-80">update your bio, city, photo, and interests anytime.</p>
         </div>
 

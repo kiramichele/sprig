@@ -154,7 +154,7 @@ export default function Step1Basics({ userId, onComplete }: Props) {
   return (
     <div>
       <div className="mb-8">
-        <div className="display text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 1: basics</div>
+        <div className="display text-2xl sm:text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 1: basics</div>
         <p className="text-sm opacity-80" style={{ color: '#1F1A3D' }}>
           build a friendly profile name so people can recognize you in pods.
         </p>

@@ -67,6 +67,17 @@ export default function InCall({
   // card to give the videos more room. Does NOT sync to other participants.
   const [cardMinimized, setCardMinimized] = useState(false)
 
+  // matchMedia-driven viewport flag, used for tile size + rotation. SSR-safe
+  // (defaults to false; the effect runs only on the client).
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
   function spawnReaction(emoji: string) {
     const id = reactionSeq.current++
     setFloating((prev) => [...prev, { id, emoji, left: 8 + Math.random() * 84 }])
@@ -126,29 +137,27 @@ export default function InCall({
         flexDirection: 'column',
       }}
     >
-      {/* top bar */}
+      {/* top bar — pod name hides on the smallest screens to keep the round
+          dots + timer comfortably visible */}
       <div
+        className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5 flex-wrap"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 20px',
           borderBottom: '2px solid rgba(255,255,255,0.1)',
-          flexWrap: 'wrap',
-          gap: 10,
         }}
       >
-        <div className="display" style={{ fontSize: 22 }}>
+        <div
+          className="display text-base sm:text-xl truncate hidden xs:block sm:block"
+          style={{ maxWidth: '40%' }}
+        >
           {podName} {podEmoji}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="flex gap-1.5 sm:gap-2">
           {rounds.map((r, i) => (
             <div
               key={r.slug}
               title={r.name}
+              className="w-3 h-3 sm:w-3.5 sm:h-3.5"
               style={{
-                width: 14,
-                height: 14,
                 borderRadius: 999,
                 border: '2px solid #FFF6E5',
                 background:
@@ -161,47 +170,39 @@ export default function InCall({
             />
           ))}
         </div>
-        <div style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{timerLabel}</div>
+        <div className="font-bold text-sm sm:text-base" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {timerLabel}
+        </div>
       </div>
 
       {!cardMinimized ? (
         <>
-          {/* participant video row */}
-          <div style={{ display: 'flex', gap: 12, padding: '14px 20px', overflowX: 'auto' }}>
+          {/* participant video row — small sticker tiles, horizontally
+              scrollable, with reduced rotation on mobile so they don't look
+              chaotic at small sizes */}
+          <div className="flex gap-2 sm:gap-3 px-4 sm:px-5 py-3 overflow-x-auto">
             {participantIds.map((id, i) => (
               <VideoTile
                 key={id}
                 participantId={id}
                 isLocal={id === localId}
-                size={104}
-                rotate={(i % 3) - 1}
+                size={isMobile ? 76 : 104}
+                rotate={isMobile ? 0 : (i % 3) - 1}
               />
             ))}
           </div>
 
           {/* center: round badge + prompt card */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '8px 20px 24px',
-              gap: 16,
-            }}
-          >
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 sm:gap-4 px-4 sm:px-5 pb-4 sm:pb-6 pt-1">
             <div
+              className="inline-flex items-center gap-2 text-sm sm:text-base"
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
                 background: currentRound?.color_hex || '#FFD23F',
                 color: '#1F1A3D',
                 border: '2.5px solid #1F1A3D',
                 boxShadow: '4px 4px 0 0 #1F1A3D',
                 borderRadius: 999,
-                padding: '6px 16px',
+                padding: '5px 14px',
                 fontWeight: 700,
               }}
             >
@@ -210,15 +211,13 @@ export default function InCall({
             </div>
 
             <div
-              className="chunky"
+              className="chunky w-full px-6 py-7 sm:px-8 sm:py-10"
               style={{
                 position: 'relative',
                 background: '#FFF6E5',
                 color: '#1F1A3D',
                 borderRadius: 24,
-                padding: '40px 32px',
                 maxWidth: 620,
-                width: '100%',
                 textAlign: 'center',
               }}
             >
@@ -230,13 +229,13 @@ export default function InCall({
                   position: 'absolute',
                   top: 10,
                   right: 10,
-                  width: 30,
-                  height: 30,
+                  width: 36,
+                  height: 36,
                   borderRadius: 999,
                   border: '2px solid #1F1A3D',
                   background: 'white',
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: 18,
                   lineHeight: 1,
                   cursor: 'pointer',
                   color: '#1F1A3D',
@@ -244,12 +243,12 @@ export default function InCall({
               >
                 −
               </button>
-              <div className="display" style={{ fontSize: 28, lineHeight: 1.3 }}>
+              <div className="display text-xl sm:text-2xl" style={{ lineHeight: 1.3 }}>
                 {currentCard?.body || 'take a breath — the next prompt is on its way.'}
               </div>
             </div>
 
-            <div style={{ fontSize: 15 }}>
+            <div className="text-sm sm:text-base text-center">
               🎤 <strong>{speakerLabel}</strong> turn to share
             </div>
           </div>
@@ -257,10 +256,10 @@ export default function InCall({
       ) : (
         <>
           {/* minimized prompt strip — just the round + an expand control. */}
-          <div style={{ padding: '10px 20px 0' }}>
+          <div className="px-4 sm:px-5 pt-3">
             <button
               onClick={() => setCardMinimized(false)}
-              className="chunky"
+              className="chunky w-full sm:w-auto"
               title="show full prompt"
               style={{
                 display: 'inline-flex',
@@ -269,11 +268,12 @@ export default function InCall({
                 background: currentRound?.color_hex || '#FFD23F',
                 color: '#1F1A3D',
                 borderRadius: 999,
-                padding: '6px 14px 6px 10px',
+                padding: '8px 14px 8px 12px',
                 fontWeight: 700,
                 fontSize: 14,
                 maxWidth: '100%',
                 cursor: 'pointer',
+                minHeight: 44,
               }}
             >
               <span>{currentRound?.emoji || '🌱'}</span>
@@ -282,6 +282,8 @@ export default function InCall({
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
+                  flex: 1,
+                  textAlign: 'left',
                 }}
               >
                 {currentCard?.body || currentRound?.name || 'tap to see prompt'}
@@ -290,14 +292,12 @@ export default function InCall({
             </button>
           </div>
 
-          {/* big video grid — fills the freed central space */}
+          {/* big video grid — fills the freed central space. The narrower
+              minmax keeps tiles reasonable on a 375px viewport (~150px ea). */}
           <div
+            className="flex-1 grid gap-3 sm:gap-4 px-4 sm:px-5 py-4"
             style={{
-              flex: 1,
-              display: 'grid',
-              gap: 14,
-              padding: '14px 20px',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
               alignContent: 'center',
               justifyItems: 'center',
             }}
@@ -307,36 +307,33 @@ export default function InCall({
                 key={id}
                 participantId={id}
                 isLocal={id === localId}
-                size={240}
-                rotate={(i % 3) - 1}
+                size={isMobile ? 150 : 240}
+                rotate={isMobile ? 0 : (i % 3) - 1}
               />
             ))}
           </div>
 
-          <div style={{ padding: '0 20px 12px', fontSize: 14, textAlign: 'center' }}>
+          <div className="text-sm text-center px-4 pb-3">
             🎤 <strong>{speakerLabel}</strong> turn to share
           </div>
         </>
       )}
 
-      {/* bottom bar */}
+      {/* bottom bar — three button groups. On mobile they stack into three
+          rows (A/V + leave, reactions, advance) so nothing wraps awkwardly. */}
       <div
+        className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-between gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3.5"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          padding: '14px 20px',
           borderTop: '2px solid rgba(255,255,255,0.1)',
-          flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="flex gap-2 justify-center sm:justify-start">
           <button
             onClick={() => daily?.setLocalAudio(!audioOn)}
             className="callctl"
             style={{ background: audioOn ? 'white' : '#B00020', color: audioOn ? '#1F1A3D' : 'white' }}
             title={audioOn ? 'mute' : 'unmute'}
+            aria-label={audioOn ? 'mute' : 'unmute'}
           >
             {audioOn ? '🎙️' : '🔇'}
           </button>
@@ -345,6 +342,7 @@ export default function InCall({
             className="callctl"
             style={{ background: videoOn ? 'white' : '#B00020', color: videoOn ? '#1F1A3D' : 'white' }}
             title={videoOn ? 'turn camera off' : 'turn camera on'}
+            aria-label={videoOn ? 'turn camera off' : 'turn camera on'}
           >
             {videoOn ? '📹' : '🚫'}
           </button>
@@ -357,33 +355,34 @@ export default function InCall({
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="flex gap-1.5 justify-center">
           {REACTIONS.map((emoji) => (
             <button
               key={emoji}
               onClick={() => react(emoji)}
               className="callctl"
               style={{ background: 'white' }}
+              aria-label={`react with ${emoji}`}
             >
               {emoji}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="flex gap-2 justify-center sm:justify-end">
           <button
             onClick={() => onAdvance('next_card')}
             disabled={advancing}
-            className="chunky"
-            style={{ background: '#FFD23F', color: '#1F1A3D', borderRadius: 12, padding: '10px 16px', fontWeight: 700 }}
+            className="chunky flex-1 sm:flex-initial"
+            style={{ background: '#FFD23F', color: '#1F1A3D', borderRadius: 12, padding: '10px 16px', fontWeight: 700, minHeight: 44 }}
           >
             next card →
           </button>
           <button
             onClick={() => onAdvance('next_round')}
             disabled={advancing}
-            className="chunky"
-            style={{ background: 'white', color: '#1F1A3D', borderRadius: 12, padding: '10px 16px', fontWeight: 700 }}
+            className="chunky flex-1 sm:flex-initial"
+            style={{ background: 'white', color: '#1F1A3D', borderRadius: 12, padding: '10px 16px', fontWeight: 700, minHeight: 44 }}
           >
             {isWrapRound ? 'wrap up →' : 'skip round →'}
           </button>
@@ -409,7 +408,7 @@ export default function InCall({
       </div>
 
       <style>{`
-        .callctl { border:2.5px solid #1F1A3D; box-shadow:3px 3px 0 0 #1F1A3D; border-radius:10px; padding:8px 12px; font-weight:700; font-size:15px; transition:all .1s ease; }
+        .callctl { border:2.5px solid #1F1A3D; box-shadow:3px 3px 0 0 #1F1A3D; border-radius:10px; padding:8px 12px; font-weight:700; font-size:15px; min-height:44px; min-width:44px; transition:all .1s ease; }
         .callctl:hover { transform:translate(-1px,-1px); }
         .callctl:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #1F1A3D; }
         .callctl:disabled { opacity:.55; cursor:not-allowed; }

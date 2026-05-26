@@ -56,20 +56,21 @@ export default function DmContent({ profile, otherUser, threadId, currentUserId,
         .field:focus { box-shadow:3px 3px 0 0 #1F1A3D; }
       `}</style>
 
-      <div className="max-w-4xl mx-auto p-8">
-        <a href="/messages" style={{ fontWeight: 700, fontSize: 14 }}>← back to messages</a>
+      <div className="max-w-4xl mx-auto px-4 py-4 sm:px-6 sm:py-8">
+        <a href="/messages" className="font-bold text-sm">← back to messages</a>
         {otherUser.username ? (
           <a
             href={`/profile/${otherUser.username}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0 20px', textDecoration: 'none', color: 'inherit' }}
+            className="flex items-center gap-3 my-3 sm:my-4"
+            style={{ textDecoration: 'none', color: 'inherit' }}
           >
             <HeaderAvatar profile={otherUser} />
-            <h1 className="display" style={{ fontSize: 32 }}>{otherUser.display_name || 'someone'}</h1>
+            <h1 className="display text-2xl sm:text-3xl truncate">{otherUser.display_name || 'someone'}</h1>
           </a>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '14px 0 20px' }}>
+          <div className="flex items-center gap-3 my-3 sm:my-4">
             <HeaderAvatar profile={otherUser} />
-            <h1 className="display" style={{ fontSize: 32 }}>{otherUser.display_name || 'someone'}</h1>
+            <h1 className="display text-2xl sm:text-3xl truncate">{otherUser.display_name || 'someone'}</h1>
           </div>
         )}
         <DmChat threadId={threadId} currentUserId={currentUserId} otherUser={otherUser} />

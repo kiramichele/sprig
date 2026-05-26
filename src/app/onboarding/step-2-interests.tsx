@@ -135,7 +135,7 @@ export default function Step2Interests({ userId, onComplete }: Props) {
   return (
     <div>
       <div className="mb-8">
-        <div className="display text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 2: interests</div>
+        <div className="display text-2xl sm:text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 2: interests</div>
         <p className="text-sm opacity-80" style={{ color: '#1F1A3D' }}>
           tell us what lights you up. choose a few interests and how often they matter.
         </p>

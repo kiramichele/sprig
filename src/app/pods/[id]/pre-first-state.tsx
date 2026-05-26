@@ -40,20 +40,20 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
 
   return (
     <section>
-      <h1 className="display" style={{ fontSize: 40, marginBottom: 8 }}>{name} {emoji}</h1>
-      <p style={{ opacity: 0.8, marginBottom: 20 }}>your pod is forming — here&apos;s who you&apos;ll meet.</p>
+      <h1 className="display text-3xl sm:text-4xl mb-2">{name} {emoji}</h1>
+      <p className="opacity-80 mb-5 text-sm sm:text-base">your pod is forming — here&apos;s who you&apos;ll meet.</p>
 
       {soon && next ? (
-        <div className="chunky" style={{ background: '#FFD23F', borderRadius: 14, padding: 20, marginBottom: 8 }}>
-          <div suppressHydrationWarning style={{ fontWeight: 700, fontSize: 18 }}>
+        <div className="chunky mb-2 px-5 py-4 sm:p-5" style={{ background: '#FFD23F', borderRadius: 14 }}>
+          <div suppressHydrationWarning className="font-bold text-base sm:text-lg">
             {hasStarted
               ? 'your first call is happening now — hop in 🎥'
               : `your first call is in ${relative(next.scheduled_for, now)}`}
           </div>
           <a
             href={`/pods/${podId}/session/${next.id}`}
-            className="chunky"
-            style={{ display: 'inline-block', marginTop: 12, background: 'white', borderRadius: 12, padding: '10px 18px', fontWeight: 700, textDecoration: 'none', color: '#1F1A3D' }}
+            className="chunky inline-flex items-center justify-center mt-3 px-5 font-bold w-full sm:w-auto"
+            style={{ background: 'white', borderRadius: 12, textDecoration: 'none', color: '#1F1A3D', minHeight: 48 }}
           >
             join call →
           </a>
@@ -62,7 +62,7 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
 
       <div className="pod-h2">your podmates</div>
       {members.length ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+        <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
           {members.map((m: any) => (
             <MemberCard
               key={m.profile_id}
@@ -73,7 +73,7 @@ export default function PreFirstState({ pod, members, sessions, currentUserId, p
           ))}
         </div>
       ) : (
-        <p style={{ opacity: 0.7, fontSize: 14 }}>we&apos;re still gathering your group.</p>
+        <p className="opacity-70 text-sm">we&apos;re still gathering your group.</p>
       )}
 
       <div className="pod-h2">your first session</div>

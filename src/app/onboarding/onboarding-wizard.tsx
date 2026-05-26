@@ -46,7 +46,7 @@ export default function OnboardingWizard({ userId, initialStep }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-[32px] p-8 shadow-[0_16px_42px_rgba(31,26,61,0.08)]">
+    <div className="bg-white rounded-2xl sm:rounded-[32px] px-5 py-6 sm:p-8 shadow-[0_16px_42px_rgba(31,26,61,0.08)]">
       <style>{`
         .display { font-family: 'Caprasimo', Georgia, serif; }
         .chunky { border: 2.5px solid #1F1A3D; box-shadow: 4px 4px 0 0 #1F1A3D; transition: all 0.12s ease; }
@@ -56,14 +56,16 @@ export default function OnboardingWizard({ userId, initialStep }: Props) {
         .field:focus { box-shadow: 4px 4px 0 0 #1F1A3D; }
       `}</style>
 
-      <div className="mb-8">
-        <div className="display text-5xl mb-2" style={{ color: '#1F1A3D' }}>welcome to sprig</div>
+      <div className="mb-6 sm:mb-8">
+        <div className="display text-3xl sm:text-5xl mb-2" style={{ color: '#1F1A3D' }}>welcome to sprig</div>
         <p className="text-sm opacity-80" style={{ color: '#1F1A3D' }}>
           complete your profile in five quick steps so we can match you with the right friends.
         </p>
       </div>
 
-      <div className="grid grid-cols-5 gap-3 mb-10">
+      {/* Step indicator — numbered dots only on mobile (labels hidden); full
+          numbered + labeled grid on sm+ to keep the wizard readable on phones */}
+      <div className="grid grid-cols-5 gap-2 sm:gap-3 mb-8 sm:mb-10">
         {stepTitles.map((title, index) => {
           const step = index + 1
           const isActive = step === activeIndex
@@ -71,7 +73,7 @@ export default function OnboardingWizard({ userId, initialStep }: Props) {
           return (
             <div key={title} className="text-center">
               <div
-                className="mx-auto flex h-10 w-10 items-center justify-center rounded-full font-bold"
+                className="mx-auto flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full font-bold text-sm sm:text-base"
                 style={{
                   background: isActive ? '#FFD23F' : isComplete ? '#6BCB77' : '#F4F0E6',
                   color: '#1F1A3D',
@@ -79,7 +81,10 @@ export default function OnboardingWizard({ userId, initialStep }: Props) {
               >
                 {step}
               </div>
-              <div className="mt-2 text-[11px] uppercase tracking-[0.18em]" style={{ color: '#1F1A3D' }}>
+              <div
+                className="mt-2 text-[10px] sm:text-[11px] uppercase tracking-[0.14em] sm:tracking-[0.18em] hidden sm:block"
+                style={{ color: '#1F1A3D' }}
+              >
                 {title}
               </div>
             </div>

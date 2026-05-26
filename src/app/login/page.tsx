@@ -83,7 +83,7 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="display text-6xl mb-2" style={{ color: '#1F1A3D' }}>sprig 🌱</div>
+          <div className="display text-5xl sm:text-6xl mb-2" style={{ color: '#1F1A3D' }}>sprig 🌱</div>
           <p style={{ color: '#1F1A3D99' }}>welcome back</p>
         </div>
 

@@ -150,17 +150,23 @@ export default function TopNav({
 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFF6E5', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-      <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
-        <a href="/home" className="display text-2xl" style={{ fontFamily: 'Caprasimo, Georgia, serif' }}>
+      <div className="max-w-4xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 gap-3">
+        <a
+          href="/home"
+          className="display text-xl sm:text-2xl"
+          style={{ fontFamily: 'Caprasimo, Georgia, serif' }}
+        >
           sprig 🌱
         </a>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* friends — pending friend-request count */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* friends — pending friend-request count. Hidden on the smallest
+              screens; reachable via the avatar menu instead. */}
           <a
             href="/friends"
             aria-label="friends"
-            style={{ position: 'relative', display: 'flex', color: '#1F1A3D' }}
+            className="hidden sm:flex"
+            style={{ position: 'relative', color: '#1F1A3D', minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
           >
             <Users size={26} strokeWidth={2.5} />
             {pendingRequestCount > 0 ? (
@@ -170,11 +176,12 @@ export default function TopNav({
             ) : null}
           </a>
 
-          {/* dms — unread message count */}
+          {/* dms — unread message count. Stays on mobile too. */}
           <a
             href="/messages"
             aria-label="messages"
-            style={{ position: 'relative', display: 'flex', color: '#1F1A3D' }}
+            className="flex"
+            style={{ position: 'relative', color: '#1F1A3D', minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
           >
             <MessageCircle size={26} strokeWidth={2.5} />
             {unreadDms > 0 ? (
@@ -188,22 +195,72 @@ export default function TopNav({
             <button
               onClick={() => setOpen((v) => !v)}
               aria-haspopup="menu"
-              style={{ width: 40, height: 40, borderRadius: 9999, border: '2.5px solid #1F1A3D', background: 'white', boxShadow: '4px 4px 0 0 #1F1A3D' }}
+              aria-expanded={open}
+              style={{ width: 44, height: 44, borderRadius: 9999, border: '2.5px solid #1F1A3D', background: 'white', boxShadow: '4px 4px 0 0 #1F1A3D', overflow: 'hidden' }}
             >
               {profile.photo_url ? (
-                <img src={profile.photo_url} alt={profile.display_name || 'avatar'} style={{ width: 36, height: 36, borderRadius: 9999 }} />
+                <img src={profile.photo_url} alt={profile.display_name || 'avatar'} style={{ width: 40, height: 40, borderRadius: 9999, objectFit: 'cover' }} />
               ) : (
-                <span style={{ display: 'inline-block', lineHeight: '36px', width: 36, height: 36, textAlign: 'center', fontWeight: 700 }}>{initial}</span>
+                <span style={{ display: 'inline-block', lineHeight: '40px', width: 40, height: 40, textAlign: 'center', fontWeight: 700 }}>{initial}</span>
               )}
             </button>
 
             {open && (
-              <div style={{ position: 'absolute', right: 0, marginTop: 8, background: 'white', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8, boxShadow: '0 8px 20px rgba(0,0,0,0.08)', minWidth: 160, zIndex: 60 }}>
-                <a href={profile.username ? `/profile/${profile.username}` : '/settings'} className="block px-4 py-3">Profile</a>
-                <a href="/friends" className="block px-4 py-3">Friends</a>
-                <a href="/settings" className="block px-4 py-3">Settings</a>
-                <button onClick={handleSignOut} className="w-full text-left px-4 py-3">Sign out</button>
-              </div>
+              <>
+                {/* invisible backdrop so a tap outside closes the menu on mobile */}
+                <div
+                  onClick={() => setOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 55 }}
+                  aria-hidden
+                />
+                <div
+                  role="menu"
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    marginTop: 8,
+                    background: 'white',
+                    border: '2px solid #1F1A3D',
+                    borderRadius: 12,
+                    boxShadow: '4px 4px 0 0 #1F1A3D',
+                    minWidth: 200,
+                    zIndex: 60,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <a
+                    href="/friends"
+                    className="sm:hidden block px-4 font-bold"
+                    style={{ minHeight: 44, display: 'flex', alignItems: 'center', color: '#1F1A3D' }}
+                    onClick={() => setOpen(false)}
+                  >
+                    friends{pendingRequestCount > 0 ? ` (${pendingRequestCount})` : ''}
+                  </a>
+                  <a
+                    href={profile.username ? `/profile/${profile.username}` : '/settings'}
+                    className="block px-4 font-bold"
+                    style={{ minHeight: 44, display: 'flex', alignItems: 'center', color: '#1F1A3D' }}
+                    onClick={() => setOpen(false)}
+                  >
+                    profile
+                  </a>
+                  <a
+                    href="/settings"
+                    className="block px-4 font-bold"
+                    style={{ minHeight: 44, display: 'flex', alignItems: 'center', color: '#1F1A3D' }}
+                    onClick={() => setOpen(false)}
+                  >
+                    settings
+                  </a>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-4 font-bold"
+                    style={{ minHeight: 44, color: '#B00020', background: 'transparent', borderTop: '1.5px solid rgba(0,0,0,0.08)' }}
+                  >
+                    sign out
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

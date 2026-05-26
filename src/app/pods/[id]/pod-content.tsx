@@ -42,7 +42,7 @@ export default function PodContent({
         .pod-h2 { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.16em; color: #1F1A3D; opacity: 0.55; margin: 28px 0 12px; }
       `}</style>
 
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
         {state === 'continuing' && (
           <ContinuingState
             pod={pod}

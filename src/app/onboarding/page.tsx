@@ -60,7 +60,7 @@ export default async function OnboardingPage() {
           : 5
 
   return (
-    <main className="min-h-screen p-8" style={{ background: '#FFF6E5' }}>
+    <main className="min-h-screen px-4 py-6 sm:p-8" style={{ background: '#FFF6E5' }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Caprasimo&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
       <div className="max-w-4xl mx-auto">
         <OnboardingWizard userId={user.id} initialStep={initialStep} />

@@ -62,16 +62,16 @@ export default function FeedbackState({ pod, members, currentMember, currentUser
 
   return (
     <section>
-      <h1 className="display" style={{ fontSize: 36, marginBottom: 12 }}>{name} {emoji}</h1>
+      <h1 className="display text-3xl sm:text-4xl mb-3">{name} {emoji}</h1>
 
-      <div className="chunky" style={{ background: '#FFD23F', borderRadius: 16, padding: 28, maxWidth: 560 }}>
-        <div className="display" style={{ fontSize: 26, marginBottom: 8, lineHeight: 1.2 }}>
+      <div className="chunky px-5 py-6 sm:px-7 sm:py-7" style={{ background: '#FFD23F', borderRadius: 16, maxWidth: 560 }}>
+        <div className="display text-xl sm:text-2xl mb-2" style={{ lineHeight: 1.2 }}>
           do you want to hang out with this group again?
         </div>
-        <p style={{ fontSize: 14, opacity: 0.85, marginBottom: 20 }}>
+        <p className="text-sm opacity-85 mb-5">
           your answer is private — only you can see it. we&apos;ll only continue if 2+ of you say yes.
         </p>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <button
             onClick={() => submit(true)}
             disabled={loading !== null}

@@ -41,20 +41,25 @@ export default function WaitingState({ profile, availability, showWidenOffer, on
 
   return (
     <section>
-      <h1 className="display text-4xl mb-3">we're looking for your pod 🔎</h1>
-      <p className="mb-4">we're matching you with 2-4 other people around your interests. this can take anywhere from a few hours to a few days depending on who's available.</p>
+      <h1 className="display text-3xl sm:text-4xl mb-3">we&apos;re looking for your pod 🔎</h1>
+      <p className="mb-4 text-sm sm:text-base">we&apos;re matching you with 2-4 other people around your interests. this can take anywhere from a few hours to a few days depending on who&apos;s available.</p>
 
       {showWidenOffer && signal?.id ? (
         <WidenNetCard availabilityId={signal.id} />
       ) : null}
 
       {signal ? (
-        <div style={{ borderRadius: 12, padding: 16, background: 'white', border: '1px solid rgba(0,0,0,0.04)' }}>
-          <div>you're available until <strong suppressHydrationWarning>{new Date(signal.available_until).toLocaleString()}</strong></div>
+        <div className="px-4 py-4 text-sm sm:text-base space-y-1" style={{ borderRadius: 12, background: 'white', border: '1px solid rgba(0,0,0,0.04)' }}>
+          <div>you&apos;re available until <strong suppressHydrationWarning>{new Date(signal.available_until).toLocaleString()}</strong></div>
           <div>matching on <strong>{(signal.preferred_interests && Array.isArray(signal.preferred_interests) && signal.preferred_interests.length) ? 'selected interests' : 'all your interests'}</strong></div>
           <div>preferred group size: <strong>{String(signal.preferred_pod_size || 4)}</strong></div>
           <div className="mt-3">
-            <button onClick={handleCancel} disabled={loading} className="px-4 py-2 font-bold" style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12 }}>
+            <button
+              onClick={handleCancel}
+              disabled={loading}
+              className="w-full sm:w-auto px-4 font-bold"
+              style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12, minHeight: 44 }}
+            >
               {loading ? 'canceling…' : 'cancel matching'}
             </button>
           </div>

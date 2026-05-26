@@ -90,9 +90,9 @@ export default function SettingsContent({
         .field:focus { box-shadow:3px 3px 0 0 #1F1A3D; }
       `}</style>
 
-      <div className="max-w-2xl mx-auto p-8">
-        <h1 className="display" style={{ fontSize: 40, marginBottom: 4 }}>settings</h1>
-        <p style={{ opacity: 0.8, marginBottom: 24 }}>fine-tune your profile and preferences.</p>
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <h1 className="display text-3xl sm:text-4xl mb-1">settings</h1>
+        <p className="opacity-80 mb-5 text-sm sm:text-base">fine-tune your profile and preferences.</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <BasicInfoSection userId={userId} initialProfile={profile} />

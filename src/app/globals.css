@@ -24,3 +24,35 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ---------- Mobile responsiveness primitives ----------
+ * Most components in Sprig use inline styles for brand visuals (chunky
+ * borders/shadows, cream backgrounds). Those don't react to viewport.
+ * These global rules apply mobile-friendly defaults to common patterns
+ * without requiring every component to be retrofitted with classes.
+ */
+
+/* iOS Safari zooms in on any input whose font is < 16px. Force 16px+
+ * on form controls site-wide so taps don't trigger an auto-zoom that
+ * the user then has to manually pinch out of. */
+@media (max-width: 640px) {
+  input,
+  textarea,
+  select,
+  button {
+    font-size: max(16px, 1em);
+  }
+  /* Soften the chunky offset shadow on narrow screens — 4px feels cramped
+   * when buttons sit edge-to-edge. Targets the project-wide `.chunky` class. */
+  .chunky {
+    box-shadow: 3px 3px 0 0 #1F1A3D;
+  }
+  .chunky:hover { box-shadow: 4px 4px 0 0 #1F1A3D; }
+  .chunky:active { box-shadow: 1px 1px 0 0 #1F1A3D; }
+}
+
+/* Sticker/decorative SVGs and floating doodles should be hidden on
+ * narrow screens via the `.decor` opt-in class. */
+@media (max-width: 640px) {
+  .decor { display: none !important; }
+}

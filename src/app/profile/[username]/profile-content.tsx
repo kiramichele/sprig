@@ -57,9 +57,9 @@ export default function ProfileContent({
         .pod-h2 { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.16em; color:#1F1A3D; opacity:.55; margin:28px 0 12px; }
       `}</style>
 
-      <div className="max-w-4xl mx-auto p-8">
-        {/* header */}
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        {/* header — photo above content on mobile, side-by-side on tablet+ */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 sm:items-start flex-wrap">
           <div style={{ flexShrink: 0 }}>
             {profile.photo_url ? (
               <img

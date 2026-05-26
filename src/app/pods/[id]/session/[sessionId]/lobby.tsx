@@ -43,64 +43,63 @@ export default function Lobby({ members, currentUserId, callStartedAt, onBegin, 
   const canBegin = participantIds.length >= 2
 
   return (
-    <div style={{ minHeight: '100vh', padding: '32px 24px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
-        <h1 className="display" style={{ fontSize: 40, marginBottom: 6 }}>
+    <div className="min-h-screen px-4 py-6 sm:px-6 sm:py-8">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="display text-3xl sm:text-5xl mb-2">
           you&apos;re in the green room 🌿
         </h1>
-        <p style={{ opacity: 0.8, marginBottom: 18 }}>
+        <p className="opacity-80 mb-4 text-sm sm:text-base">
           {remainingMs > 0
             ? `we'll begin when everyone's here, or in about ${countdown}.`
             : "we'll begin whenever you're ready."}
         </p>
 
         <div
-          className="chunky"
-          style={{ background: '#FFD23F', borderRadius: 16, padding: 18, marginBottom: 22 }}
+          className="chunky mb-5 sm:mb-6"
+          style={{ background: '#FFD23F', borderRadius: 16, padding: 16 }}
         >
-          <div style={{ fontWeight: 700, marginBottom: 2 }}>while we wait 🎧</div>
-          <div style={{ fontSize: 14, opacity: 0.85 }}>
+          <div className="font-bold mb-0.5">while we wait 🎧</div>
+          <div className="text-sm opacity-85">
             what&apos;s playing in your headphones right now?
           </div>
         </div>
 
         {participantIds.length > 0 ? (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+          <div className="grid gap-3 sm:gap-4 mb-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', justifyItems: 'center' }}>
             {participantIds.map((id, i) => (
               <VideoTile
                 key={id}
                 participantId={id}
                 isLocal={id === localId}
-                size={150}
+                size={140}
                 rotate={(i % 3) - 1}
               />
             ))}
           </div>
         ) : (
-          <p style={{ opacity: 0.6, marginBottom: 24 }}>connecting your camera…</p>
+          <p className="opacity-60 mb-6">connecting your camera…</p>
         )}
 
         <div className="pod-h2">your podmates</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+        <div className="flex flex-col gap-2 mb-6">
           {members.map((m) => {
             const here = joinedProfileIds.has(m.profile_id)
             return (
               <div
                 key={m.profile_id}
-                className="chunky"
+                className="chunky flex justify-between items-center gap-3"
                 style={{
                   background: here ? '#E6FFED' : 'white',
                   borderRadius: 12,
                   padding: '10px 14px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
+                  minHeight: 44,
                 }}
               >
-                <span style={{ fontWeight: 700 }}>
+                <span className="font-bold">
                   {m.display_name || 'someone'}
                   {m.profile_id === currentUserId ? ' (you)' : ''}
                 </span>
-                <span style={{ fontSize: 13, opacity: 0.75 }}>{here ? '✓ here' : 'not yet'}</span>
+                <span className="text-sm opacity-75">{here ? '✓ here' : 'not yet'}</span>
               </div>
             )
           })}
@@ -109,7 +108,7 @@ export default function Lobby({ members, currentUserId, callStartedAt, onBegin, 
         <button
           onClick={onBegin}
           disabled={!canBegin || beginning}
-          className="chunky"
+          className="chunky w-full sm:w-auto"
           style={{
             background: canBegin ? '#6BCB77' : 'white',
             borderRadius: 14,
@@ -117,12 +116,13 @@ export default function Lobby({ members, currentUserId, callStartedAt, onBegin, 
             fontWeight: 700,
             fontSize: 17,
             color: '#1F1A3D',
+            minHeight: 52,
           }}
         >
           {beginning ? 'starting…' : 'begin the hangout'}
         </button>
         {!canBegin ? (
-          <p style={{ fontSize: 13, opacity: 0.7, marginTop: 8 }}>
+          <p className="text-sm opacity-70 mt-2">
             we&apos;ll light this up once at least one more podmate joins.
           </p>
         ) : null}

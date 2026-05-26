@@ -20,7 +20,7 @@ export default function HomeContent(props: any) {
     <div>
       <TopNav profile={profile} pendingRequestCount={pendingRequestCount} />
 
-      <div className="max-w-4xl mx-auto p-8" style={{ background: '#FFF6E5' }}>
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8" style={{ background: '#FFF6E5' }}>
         {activePodCount > 0 ? (
           <ActiveState profile={profile} pods={pods} sessions={sessions} onJoin={() => setModalOpen(true)} />
         ) : openAvailabilityCount > 0 ? (

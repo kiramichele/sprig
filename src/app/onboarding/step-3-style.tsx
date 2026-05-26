@@ -119,7 +119,7 @@ export default function Step3Style({ userId, onComplete }: Props) {
   return (
     <div>
       <div className="mb-8">
-        <div className="display text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 3: friendship style</div>
+        <div className="display text-2xl sm:text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 3: friendship style</div>
         <p className="text-sm opacity-80" style={{ color: '#1F1A3D' }}>
           tell us how you like to connect so we can match your pace.
         </p>

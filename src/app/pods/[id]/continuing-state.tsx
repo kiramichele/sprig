@@ -87,13 +87,13 @@ export default function ContinuingState({ pod, members, sessions, proposals, cur
 
   return (
     <section>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-        <h1 className="display" style={{ fontSize: 40 }}>{name} {emoji}</h1>
+      <div className="flex items-center gap-3 mb-2 flex-wrap">
+        <h1 className="display text-3xl sm:text-4xl">{name} {emoji}</h1>
         <span style={{ background: '#6BCB77', border: '2.5px solid #1F1A3D', borderRadius: 999, padding: '2px 12px', fontWeight: 700, fontSize: 13 }}>
           continuing
         </span>
       </div>
-      <p style={{ opacity: 0.8, marginBottom: 8 }}>your clubhouse — chat, plan, and keep meeting up.</p>
+      <p className="opacity-80 mb-2 text-sm sm:text-base">your clubhouse — chat, plan, and keep meeting up.</p>
 
       {proposalList.length > 0 ? (
         <>
@@ -123,14 +123,14 @@ export default function ContinuingState({ pod, members, sessions, proposals, cur
       )}
       <button
         onClick={() => setShowProposeModal(true)}
-        className="chunky"
-        style={{ marginTop: 12, background: 'white', borderRadius: 12, padding: '8px 16px', fontWeight: 700 }}
+        className="chunky mt-3 w-full sm:w-auto"
+        style={{ background: 'white', borderRadius: 12, padding: '10px 18px', fontWeight: 700, minHeight: 44 }}
       >
         + propose new session
       </button>
 
       <div className="pod-h2">your pod</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+      <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
         {members.map((m: any) => (
           <MemberCard
             key={m.profile_id}

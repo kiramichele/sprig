@@ -72,15 +72,15 @@ export default function MessagesList({ threads }: Props) {
   const [now] = useState(() => Date.now())
 
   return (
-    <div className="max-w-4xl mx-auto p-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
       <style>{`
         .chunky { border:2.5px solid #1F1A3D; box-shadow:4px 4px 0 0 #1F1A3D; transition:all .12s ease; }
         .chunky:hover { transform:translate(-1px,-1px); box-shadow:5px 5px 0 0 #1F1A3D; }
         .chunky:active { transform:translate(2px,2px); box-shadow:1px 1px 0 0 #1F1A3D; }
       `}</style>
 
-      <h1 className="display" style={{ fontSize: 40, marginBottom: 4 }}>messages 💬</h1>
-      <p style={{ opacity: 0.8, marginBottom: 20 }}>your dms with pod friends.</p>
+      <h1 className="display text-3xl sm:text-4xl mb-1">messages 💬</h1>
+      <p className="opacity-80 mb-5 text-sm sm:text-base">your dms with pod friends.</p>
 
       {threads.length === 0 ? (
         <div

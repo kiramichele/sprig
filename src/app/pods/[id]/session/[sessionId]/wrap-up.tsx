@@ -25,31 +25,23 @@ export default function WrapUp({ sessionState, rounds, cards, onEnd, ending, end
 
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px 24px',
-        color: '#1F1A3D',
-      }}
+      className="min-h-screen flex items-center justify-center px-4 py-8 sm:px-6"
+      style={{ color: '#1F1A3D' }}
     >
-      <div style={{ maxWidth: 560, textAlign: 'center' }}>
-        <h1 className="display" style={{ fontSize: 44, marginBottom: 12 }}>
+      <div className="w-full max-w-xl text-center">
+        <h1 className="display text-3xl sm:text-5xl mb-3">
           that was nice ✨
         </h1>
-        <p style={{ opacity: 0.8, marginBottom: 24 }}>one last thought before you go —</p>
+        <p className="opacity-80 mb-6 text-sm sm:text-base">one last thought before you go —</p>
 
         <div
-          className="chunky"
+          className="chunky mb-7 px-6 py-8 sm:px-7 sm:py-9"
           style={{
             background: 'white',
             borderRadius: 24,
-            padding: '32px 28px',
-            marginBottom: 28,
           }}
         >
-          <div className="display" style={{ fontSize: 24, lineHeight: 1.35 }}>
+          <div className="display text-xl sm:text-2xl" style={{ lineHeight: 1.35 }}>
             {prompt}
           </div>
         </div>
@@ -57,7 +49,7 @@ export default function WrapUp({ sessionState, rounds, cards, onEnd, ending, end
         <button
           onClick={onEnd}
           disabled={ending}
-          className="chunky"
+          className="chunky w-full sm:w-auto"
           style={{
             background: '#6BCB77',
             color: '#1F1A3D',
@@ -65,12 +57,13 @@ export default function WrapUp({ sessionState, rounds, cards, onEnd, ending, end
             padding: '14px 32px',
             fontWeight: 700,
             fontSize: 17,
+            minHeight: 52,
           }}
         >
           {ending ? 'wrapping up…' : 'end call'}
         </button>
         {endError ? (
-          <p style={{ color: '#B00020', fontSize: 13, marginTop: 12, fontWeight: 700 }}>
+          <p className="text-sm font-bold mt-3" style={{ color: '#B00020' }}>
             {endError}
           </p>
         ) : null}
