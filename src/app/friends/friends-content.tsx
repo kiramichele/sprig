@@ -232,8 +232,16 @@ export default function FriendsContent({ incoming, outgoing, accepted }: Props) 
 
       <div className="pod-h2">friends</div>
       {accepted.length === 0 ? (
-        <div className="chunky" style={{ background: 'white', borderRadius: 14, padding: 20, opacity: 0.85 }}>
-          no friends yet — when you click with someone in a pod, send them a request 🌱
+        <div
+          className="chunky"
+          style={{ background: 'white', borderRadius: 14, padding: 22, textAlign: 'center' }}
+        >
+          <div style={{ fontSize: 32, marginBottom: 6 }}>🌱</div>
+          <div className="display" style={{ fontSize: 20, marginBottom: 6 }}>no friends yet</div>
+          <p style={{ fontSize: 14, opacity: 0.78, lineHeight: 1.5, margin: '0 auto', maxWidth: 360 }}>
+            friendships start in pods. when you click with someone on a call,
+            send them a request.
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

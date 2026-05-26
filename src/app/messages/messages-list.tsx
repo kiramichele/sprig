@@ -83,8 +83,15 @@ export default function MessagesList({ threads }: Props) {
       <p style={{ opacity: 0.8, marginBottom: 20 }}>your dms with pod friends.</p>
 
       {threads.length === 0 ? (
-        <div className="chunky" style={{ background: 'white', borderRadius: 14, padding: 20, opacity: 0.85 }}>
-          no DMs yet — say hi to a friend from the friends page
+        <div
+          className="chunky"
+          style={{ background: 'white', borderRadius: 14, padding: 24, textAlign: 'center' }}
+        >
+          <div style={{ fontSize: 32, marginBottom: 6 }}>✨</div>
+          <div className="display" style={{ fontSize: 20, marginBottom: 6 }}>no messages yet</div>
+          <p style={{ fontSize: 14, opacity: 0.78, lineHeight: 1.5, margin: '0 auto', maxWidth: 380 }}>
+            when you and a podmate become friends, your conversation lives here.
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

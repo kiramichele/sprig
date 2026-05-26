@@ -4,6 +4,24 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import Spinner from '@/components/spinner'
+
+function friendlyLoginError(raw: string): string {
+  const m = raw.toLowerCase()
+  if (m.includes('invalid login') || m.includes('invalid_credentials')) {
+    return "those don't match what we have on file. double-check the email and password?"
+  }
+  if (m.includes('email not confirmed') || m.includes('not confirmed')) {
+    return "please confirm your email first — check your inbox (and spam) for the link."
+  }
+  if (m.includes('rate limit') || m.includes('too many')) {
+    return 'too many attempts in a row — wait a minute and try again.'
+  }
+  if (m.includes('network') || m.includes('fetch')) {
+    return 'looks like the internet hiccuped — give it another try?'
+  }
+  return raw || "couldn't sign in just now — try again?"
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,7 +47,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError(error.message)
+      setError(friendlyLoginError(error.message))
       setLoading(false)
       return
     }
@@ -118,9 +136,15 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="chunky w-full py-3 font-bold text-lg"
-            style={{ background: '#FFD23F', borderRadius: '14px', color: '#1F1A3D' }}
+            style={{ background: '#FFD23F', borderRadius: '14px', color: '#1F1A3D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
           >
-            {loading ? 'signing in...' : 'sign in'}
+            {loading ? (
+              <>
+                <Spinner size="sm" /> signing in…
+              </>
+            ) : (
+              'sign in'
+            )}
           </button>
         </form>
 

@@ -45,7 +45,16 @@ export default function ResetPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password })
     setLoading(false)
     if (updateError) {
-      setError(updateError.message)
+      const m = updateError.message.toLowerCase()
+      if (m.includes('same') || m.includes('different')) {
+        setError('that looks like your current password — try a new one.')
+      } else if (m.includes('weak') || m.includes('at least')) {
+        setError('password needs to be at least 8 characters.')
+      } else if (m.includes('session') || m.includes('expired')) {
+        setError('this reset link expired. request a new one from the forgot-password page.')
+      } else {
+        setError("couldn't save your new password — try again?")
+      }
       return
     }
     setDone(true)

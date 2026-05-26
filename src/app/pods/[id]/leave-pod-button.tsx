@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
+import { useToast } from '@/components/toast-provider'
 
 interface Props {
   podId: string
@@ -34,6 +35,7 @@ export default function LeavePodButton({ podId, podName, podStatus, onLeft }: Pr
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const { showToast } = useToast()
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -53,6 +55,7 @@ export default function LeavePodButton({ podId, podName, podStatus, onLeft }: Pr
       const payload = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(payload?.error || 'leave failed')
       setOpen(false)
+      showToast(`left ${podName}`, 'info')
       if (onLeft) {
         onLeft()
       } else {
@@ -61,7 +64,7 @@ export default function LeavePodButton({ podId, podName, podStatus, onLeft }: Pr
       }
     } catch (err) {
       console.error('leave pod: failed —', err)
-      setError('could not leave the pod — try again')
+      setError("couldn't leave the pod — try again?")
     } finally {
       setBusy(false)
     }

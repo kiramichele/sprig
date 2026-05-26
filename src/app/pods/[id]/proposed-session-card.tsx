@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getErrorMessage } from '@/lib/scheduling/errors'
+import Spinner from '@/components/spinner'
 import type {
   ProposedSession,
   RsvpResponse,
@@ -93,6 +94,8 @@ function friendlyError(raw: string): string {
 export default function ProposedSessionCard({ session, currentUserId, podMembers }: Props) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
+  // tracks WHICH rsvp button is in flight so only that one shows the spinner
+  const [pending, setPending] = useState<RsvpResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -160,6 +163,7 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
     if (busy) return
     console.log('[rsvp] click — session=', session.id, 'response=', response)
     setBusy(true)
+    setPending(response)
     setError(null)
     try {
       const supabase = createClient()
@@ -196,6 +200,7 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
       if (/no longer accepting rsvps/i.test(msg)) router.refresh()
     } finally {
       setBusy(false)
+      setPending(null)
     }
   }
 
@@ -282,24 +287,27 @@ export default function ProposedSessionCard({ session, currentUserId, podMembers
             onClick={() => rsvp('yes')}
             disabled={busy}
             className="chunky"
-            style={{ background: '#6BCB77', borderRadius: 10, padding: '8px 14px', fontWeight: 700 }}
+            style={{ background: '#6BCB77', borderRadius: 10, padding: '8px 14px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           >
+            {pending === 'yes' ? <Spinner size="sm" /> : null}
             yes, I&apos;m in
           </button>
           <button
             onClick={() => rsvp('maybe')}
             disabled={busy}
             className="chunky"
-            style={{ background: '#FFD23F', borderRadius: 10, padding: '8px 14px', fontWeight: 700 }}
+            style={{ background: '#FFD23F', borderRadius: 10, padding: '8px 14px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           >
+            {pending === 'maybe' ? <Spinner size="sm" /> : null}
             maybe
           </button>
           <button
             onClick={() => rsvp('no')}
             disabled={busy}
             className="chunky"
-            style={{ background: 'white', borderRadius: 10, padding: '8px 14px', fontWeight: 700 }}
+            style={{ background: 'white', borderRadius: 10, padding: '8px 14px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           >
+            {pending === 'no' ? <Spinner size="sm" /> : null}
             can&apos;t make it
           </button>
           {myRsvp ? (

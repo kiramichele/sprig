@@ -143,7 +143,7 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
         {!loaded ? (
           <div style={{ opacity: 0.6, fontSize: 14 }}>loading messages…</div>
         ) : messages.length === 0 ? (
-          <div style={{ opacity: 0.6, fontSize: 14 }}>no messages yet — say hi! 👋</div>
+          <PodChatEmpty members={members} currentUserId={currentUserId} />
         ) : (
           messages.map((msg) => {
             if (msg.is_system) {
@@ -223,6 +223,37 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
         </button>
       </form>
       {error ? <div style={{ padding: '0 12px 12px', fontSize: 12, color: '#B00020' }}>{error}</div> : null}
+    </div>
+  )
+}
+
+function PodChatEmpty({ members, currentUserId }: { members: any[] | undefined; currentUserId: string }) {
+  const others = (members || [])
+    .map((m) => m?.profile || m)
+    .filter((p: any) => p && p.id && p.id !== currentUserId)
+  const otherCount = others.length
+  return (
+    <div style={{ textAlign: 'center', padding: '20px 8px', color: '#1F1A3D' }}>
+      <div className="display" style={{ fontSize: 20, marginBottom: 6 }}>
+        say hi 👋
+      </div>
+      <p style={{ fontSize: 14, opacity: 0.78, margin: '0 auto 14px', maxWidth: 360, lineHeight: 1.5 }}>
+        this is where you&apos;ll chat between sessions
+        {otherCount > 0 ? (
+          <> — say hi to {otherCount} of your podmates 🌿</>
+        ) : (
+          <> 🌿</>
+        )}
+      </p>
+      {otherCount > 0 ? (
+        <div style={{ display: 'inline-flex', gap: -6, padding: '0 6px' }}>
+          {others.slice(0, 5).map((p: any) => (
+            <span key={p.id} style={{ marginLeft: -8 }}>
+              <Avatar profile={p} size={36} />
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }

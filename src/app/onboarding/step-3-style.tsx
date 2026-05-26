@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
+import Spinner from '@/components/spinner'
 
 type Props = {
   userId: string
@@ -206,9 +207,15 @@ export default function Step3Style({ userId, onComplete }: Props) {
             type="submit"
             disabled={saving}
             className="chunky w-full py-3 font-bold text-lg"
-            style={{ background: '#4D96FF', borderRadius: '14px', color: 'white' }}
+            style={{ background: '#4D96FF', borderRadius: '14px', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
           >
-            {saving ? 'saving…' : 'save friendship style'}
+            {saving ? (
+              <>
+                <Spinner size="sm" color="#FFFFFF" /> saving…
+              </>
+            ) : (
+              'save friendship style'
+            )}
           </button>
         </form>
       )}

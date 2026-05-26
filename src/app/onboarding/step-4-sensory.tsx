@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Spinner from '@/components/spinner'
 import type { Database } from '@/lib/supabase/database.types'
 
 type Props = {
@@ -199,9 +200,15 @@ export default function Step4Sensory({ userId, onComplete }: Props) {
               onClick={saveSettings}
               disabled={saving}
               className="chunky w-full py-3 font-bold text-lg"
-              style={{ background: '#4D96FF', borderRadius: '14px', color: 'white' }}
+              style={{ background: '#4D96FF', borderRadius: '14px', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
             >
-              {saving ? 'saving…' : 'save preferences'}
+              {saving ? (
+                <>
+                  <Spinner size="sm" color="#FFFFFF" /> saving…
+                </>
+              ) : (
+                'save preferences'
+              )}
             </button>
           </div>
         </div>

@@ -14,6 +14,20 @@ export default function ActiveState({ profile, pods, sessions, onJoin }: any) {
           <div>your next pod meets in <strong suppressHydrationWarning>{new Date(soon.scheduled_for).toLocaleString()}</strong></div>
           <a href={`/pods/${soon.pod_id}`} className="inline-block mt-2 px-4 py-2" style={{ background: 'white', border: '2.5px solid #1F1A3D', boxShadow: '4px 4px 0 0 #1F1A3D', borderRadius: 12 }}>join call</a>
         </div>
+      ) : safePods.length > 0 ? (
+        <div
+          style={{
+            background: '#FFF8E6',
+            border: '2px dashed rgba(31,26,61,0.18)',
+            padding: 14,
+            borderRadius: 12,
+            marginBottom: 12,
+            fontSize: 14,
+            lineHeight: 1.5,
+          }}
+        >
+          no sessions on your calendar — propose one in any of your pods to get something going 🌱
+        </div>
       ) : null}
 
       <div className="space-y-4">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
+import Spinner from '@/components/spinner'
 
 type Props = {
   userId: string
@@ -227,9 +228,15 @@ export default function Step1Basics({ userId, onComplete }: Props) {
           type="submit"
           disabled={loading}
           className="chunky w-full py-3 font-bold text-lg"
-          style={{ background: '#FFD23F', borderRadius: '14px', color: '#1F1A3D' }}
+          style={{ background: '#FFD23F', borderRadius: '14px', color: '#1F1A3D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
         >
-          {loading ? 'saving…' : 'save basics'}
+          {loading ? (
+            <>
+              <Spinner size="sm" /> saving…
+            </>
+          ) : (
+            'save basics'
+          )}
         </button>
       </form>
     </div>

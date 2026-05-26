@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Spinner from '@/components/spinner'
+import { useToast } from '@/components/toast-provider'
 import type { Friendship } from './friend-request-button'
 
 interface Props {
@@ -22,6 +24,7 @@ export default function FriendRequestModal({
   const [note, setNote] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { showToast } = useToast()
   // Portal target — only resolved on the client. Without this, the modal
   // renders inside <MemberCard>, whose `transform: rotate(...)` traps
   // `position: fixed` and lets neighbor cards cover the modal.
@@ -53,6 +56,7 @@ export default function FriendRequestModal({
         return
       }
       onSent(payload.friendship as Friendship)
+      showToast(`request sent to ${targetDisplayName}`, 'success')
       onClose()
     } catch (err) {
       console.error('friend request: send failed —', err)
@@ -109,9 +113,15 @@ export default function FriendRequestModal({
             onClick={handleSend}
             disabled={!valid || sending}
             className="chunky"
-            style={{ background: '#6BCB77', borderRadius: 12, padding: '9px 16px', fontWeight: 700 }}
+            style={{ background: '#6BCB77', borderRadius: 12, padding: '9px 16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           >
-            {sending ? 'sending…' : 'send request'}
+            {sending ? (
+              <>
+                <Spinner size="sm" /> sending…
+              </>
+            ) : (
+              'send request'
+            )}
           </button>
         </div>
       </div>

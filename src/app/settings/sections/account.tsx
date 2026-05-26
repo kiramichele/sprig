@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/components/toast-provider'
 
 interface Props {
   userId: string
@@ -109,6 +110,7 @@ function PasswordModal({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const { showToast } = useToast()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -149,9 +151,10 @@ function PasswordModal({
       const { error: updateError } = await supabase.auth.updateUser({ password: next })
       if (updateError) throw updateError
       setSuccess(true)
+      showToast('password updated', 'success')
       setTimeout(onClose, 1500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'could not change password')
+      setError(err instanceof Error ? err.message : "couldn't change password — try again?")
     } finally {
       setBusy(false)
     }

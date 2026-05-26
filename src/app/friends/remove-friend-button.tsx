@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useToast } from '@/components/toast-provider'
 
 interface Props {
   friendshipId: string
@@ -23,6 +24,7 @@ export default function RemoveFriendButton({ friendshipId, otherUserName, onRemo
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const { showToast } = useToast()
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -40,10 +42,11 @@ export default function RemoveFriendButton({ friendshipId, otherUserName, onRemo
       const payload = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(payload?.error || 'remove failed')
       setOpen(false)
+      showToast(`removed ${otherUserName}`, 'info')
       onRemoved()
     } catch (err) {
       console.error('remove friend: failed —', err)
-      setError('could not remove — try again')
+      setError("couldn't remove — try again?")
     } finally {
       setBusy(false)
     }

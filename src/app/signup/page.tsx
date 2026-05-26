@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import Spinner from '@/components/spinner'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -15,23 +16,23 @@ export default function SignupPage() {
     if (!error) return null
 
     if (error.status === 429) {
-      return 'Too many signup attempts. Please wait a few minutes and try again.'
+      return 'too many signup attempts in a row — wait a few minutes and try again.'
     }
 
     const message = error.message.toLowerCase()
     if (message.includes('already registered') || message.includes('already exists')) {
-      return 'This email is already registered. If you already have an account, sign in instead.'
+      return "looks like this email already has an account. want to sign in instead?"
     }
-
     if (message.includes('invalid email')) {
-      return 'Please enter a valid email address.'
+      return "that doesn't look like a valid email — give it another check?"
     }
-
     if (message.includes('password should be at least') || message.includes('password must be at least')) {
-      return 'Password must be at least 8 characters.'
+      return 'password needs to be at least 8 characters.'
     }
-
-    return error.message
+    if (message.includes('network') || message.includes('fetch')) {
+      return 'looks like the internet hiccuped — give it another try?'
+    }
+    return error.message || "couldn't create your account just now — try again?"
   }
 
   async function handleSignup(e: React.FormEvent) {
@@ -40,7 +41,7 @@ export default function SignupPage() {
     setError(null)
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+      setError('password needs to be at least 8 characters.')
       setLoading(false)
       return
     }
@@ -146,9 +147,15 @@ export default function SignupPage() {
                 type="submit"
                 disabled={loading}
                 className="chunky w-full py-3 font-bold text-lg"
-                style={{ background: '#6BCB77', borderRadius: '14px', color: 'white' }}
+                style={{ background: '#6BCB77', borderRadius: '14px', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
               >
-                {loading ? 'creating...' : 'create account'}
+                {loading ? (
+                  <>
+                    <Spinner size="sm" color="#FFFFFF" /> creating your account…
+                  </>
+                ) : (
+                  'create account'
+                )}
               </button>
             </form>
 

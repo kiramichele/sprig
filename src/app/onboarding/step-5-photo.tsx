@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
+import Spinner from '@/components/spinner'
 
 type Props = {
   userId: string
@@ -22,6 +23,7 @@ export default function Step5Photo({ userId, onComplete }: Props) {
   const [existingPhoto, setExistingPhoto] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -98,6 +100,7 @@ export default function Step5Photo({ userId, onComplete }: Props) {
     try {
       let photoUrl = existingPhoto
       if (file) {
+        setUploading(true)
         const extension = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
         const path = `${userId}/avatar-${Date.now()}.${extension}`
         const supabase = createClient()
@@ -106,7 +109,7 @@ export default function Step5Photo({ userId, onComplete }: Props) {
           .upload(path, file, { upsert: true })
 
         if (uploadError) {
-          setError('could not upload your photo')
+          setError('couldn’t upload that photo — try a smaller or different image?')
           return
         }
 
@@ -115,11 +118,12 @@ export default function Step5Photo({ userId, onComplete }: Props) {
           .getPublicUrl(path)
 
         photoUrl = urlData.publicUrl
+        setUploading(false)
       }
 
       const updateError = await saveProfile(photoUrl)
       if (updateError) {
-        setError('could not finish onboarding')
+        setError('couldn’t finish onboarding — try again?')
         return
       }
 
@@ -127,9 +131,10 @@ export default function Step5Photo({ userId, onComplete }: Props) {
       router.push('/home')
       router.refresh()
     } catch {
-      setError('something went wrong while finishing onboarding')
+      setError('something glitched on our end — try again in a sec?')
     } finally {
       setSaving(false)
+      setUploading(false)
     }
   }
 
@@ -205,18 +210,30 @@ export default function Step5Photo({ userId, onComplete }: Props) {
               onClick={handleSkip}
               disabled={saving}
               className="chunky w-full py-3 font-bold text-lg"
-              style={{ background: 'white', borderRadius: '14px', color: '#1F1A3D' }}
+              style={{ background: 'white', borderRadius: '14px', color: '#1F1A3D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
             >
-              {saving ? 'saving…' : 'skip for now'}
+              {saving && !uploading ? (
+                <>
+                  <Spinner size="sm" /> saving…
+                </>
+              ) : (
+                'skip for now'
+              )}
             </button>
             <button
               type="button"
               onClick={handleFinish}
               disabled={saving}
               className="chunky w-full py-3 font-bold text-lg"
-              style={{ background: '#6BCB77', borderRadius: '14px', color: 'white' }}
+              style={{ background: '#6BCB77', borderRadius: '14px', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
             >
-              {saving ? 'finishing…' : 'finish onboarding'}
+              {saving ? (
+                <>
+                  <Spinner size="sm" color="#FFFFFF" /> {uploading ? 'uploading…' : 'finishing…'}
+                </>
+              ) : (
+                'finish onboarding'
+              )}
             </button>
           </div>
         </div>

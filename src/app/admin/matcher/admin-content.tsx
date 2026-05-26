@@ -334,7 +334,13 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
           current pool ({pool.length})
         </h2>
         {pool.length === 0 ? (
-          <p style={{ opacity: 0.7, fontSize: 14 }}>nobody is in the pool right now.</p>
+          <div
+            className="chunky"
+            style={{ background: 'white', borderRadius: 12, padding: 16, fontSize: 14, opacity: 0.85 }}
+          >
+            the pool is empty right now. when users join, they&apos;ll show up
+            here for matching.
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pool.map((entry) => (
@@ -368,7 +374,13 @@ export default function AdminContent({ pool, pods, cronSecret }: Props) {
           pods formed (last 24h) ({pods.length})
         </h2>
         {pods.length === 0 ? (
-          <p style={{ opacity: 0.7, fontSize: 14 }}>no pods formed in the last 24 hours.</p>
+          <div
+            className="chunky"
+            style={{ background: 'white', borderRadius: 12, padding: 16, fontSize: 14, opacity: 0.85 }}
+          >
+            no pods formed yet. run the matcher to see what happens, or check
+            back later.
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pods.map((pod) => {

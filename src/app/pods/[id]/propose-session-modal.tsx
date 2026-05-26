@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getErrorMessage } from '@/lib/scheduling/errors'
+import Spinner from '@/components/spinner'
 
 interface Props {
   podId: string
@@ -204,9 +205,15 @@ export default function ProposeSessionModal({ podId, lastSessionAt, onClose, onP
             onClick={submit}
             disabled={busy || isPast}
             className="chunky"
-            style={{ background: '#6BCB77', borderRadius: 12, padding: '9px 18px', fontWeight: 700 }}
+            style={{ background: '#6BCB77', borderRadius: 12, padding: '9px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8 }}
           >
-            {busy ? 'proposing…' : 'propose'}
+            {busy ? (
+              <>
+                <Spinner size="sm" /> proposing…
+              </>
+            ) : (
+              'propose'
+            )}
           </button>
         </div>
       </div>

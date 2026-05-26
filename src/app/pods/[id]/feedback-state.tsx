@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MemberCard from './member-card'
+import Spinner from '@/components/spinner'
 
 export default function FeedbackState({ pod, members, currentMember, currentUserId, podId }: any) {
   const router = useRouter()
@@ -75,17 +76,29 @@ export default function FeedbackState({ pod, members, currentMember, currentUser
             onClick={() => submit(true)}
             disabled={loading !== null}
             className="chunky"
-            style={{ background: '#6BCB77', borderRadius: 12, padding: '12px 24px', fontWeight: 700, fontSize: 16 }}
+            style={{ background: '#6BCB77', borderRadius: 12, padding: '12px 24px', fontWeight: 700, fontSize: 16, display: 'inline-flex', alignItems: 'center', gap: 10 }}
           >
-            {loading === true ? 'voting…' : 'yes, please'}
+            {loading === true ? (
+              <>
+                <Spinner size="sm" /> voting…
+              </>
+            ) : (
+              'yes, please'
+            )}
           </button>
           <button
             onClick={() => submit(false)}
             disabled={loading !== null}
             className="chunky"
-            style={{ background: 'white', borderRadius: 12, padding: '12px 24px', fontWeight: 700, fontSize: 16 }}
+            style={{ background: 'white', borderRadius: 12, padding: '12px 24px', fontWeight: 700, fontSize: 16, display: 'inline-flex', alignItems: 'center', gap: 10 }}
           >
-            {loading === false ? 'voting…' : 'not this time'}
+            {loading === false ? (
+              <>
+                <Spinner size="sm" /> voting…
+              </>
+            ) : (
+              'not this time'
+            )}
           </button>
         </div>
         {error ? <div style={{ marginTop: 14, fontSize: 13, color: '#B00020' }}>{error}</div> : null}

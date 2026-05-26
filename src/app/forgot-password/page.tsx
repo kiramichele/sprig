@@ -24,7 +24,14 @@ export default function ForgotPasswordPage() {
     )
     setLoading(false)
     if (resetError) {
-      setError(resetError.message)
+      const m = resetError.message.toLowerCase()
+      if (m.includes('rate') || m.includes('too many')) {
+        setError('too many reset attempts — wait a minute and try again.')
+      } else if (m.includes('network') || m.includes('fetch')) {
+        setError('looks like the internet hiccuped — give it another try?')
+      } else {
+        setError("couldn't send the reset link just now — try again?")
+      }
       return
     }
     // Always show "sent" — never reveal whether the address has an account.
