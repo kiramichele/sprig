@@ -60,7 +60,13 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
     let active = true
     const supabase = createClient()
 
-    async function load() {
+    /**
+     * Refetch the message list and merge with what's already in state, deduping
+     * by id. Used by the initial load, the realtime fallback (when iOS Safari
+     * or mobile Chrome suspend the websocket), and the visibilitychange
+     * handler that fires when the user returns to the tab.
+     */
+    async function refresh() {
       try {
         const { data, error: loadError } = await supabase
           .from('messages')
@@ -69,7 +75,15 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
           .order('created_at', { ascending: true })
           .limit(50)
         if (loadError) throw loadError
-        if (active) setMessages((data || []).filter((m: any) => !m.is_deleted))
+        if (!active) return
+        const fresh = (data || []).filter((m: any) => !m.is_deleted)
+        setMessages((prev) => {
+          if (prev.length === 0) return fresh
+          // Merge — preserve order from server, dedupe by id.
+          const ids = new Set(prev.map((m) => m.id))
+          const additions = fresh.filter((m) => !ids.has(m.id))
+          return additions.length === 0 ? prev : [...prev, ...additions]
+        })
       } catch (err) {
         console.error('pod chat: load failed —', err)
         if (active) setError('could not load messages')
@@ -77,7 +91,7 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
         if (active) setLoaded(true)
       }
     }
-    load()
+    refresh()
 
     const channel = supabase
       .channel(`pod-chat-${threadId}`)
@@ -92,8 +106,26 @@ export default function PodChat({ threadId, currentUserId, members }: any) {
       )
       .subscribe()
 
+    // Mobile browsers (especially iOS Safari) suspend the websocket when the
+    // tab is backgrounded. The instant the user returns we force a refetch
+    // so they don't sit on a stale chat.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+
+    // Belt-and-suspenders poll. 5s is gentle, only fires on a visible tab.
+    // If realtime is working this is a cheap no-op (dedupe takes care of it).
+    const pollId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh()
+    }, 5000)
+
     return () => {
       active = false
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+      window.clearInterval(pollId)
       supabase.removeChannel(channel)
     }
   }, [threadId])

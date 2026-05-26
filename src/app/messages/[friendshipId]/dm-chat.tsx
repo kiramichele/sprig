@@ -58,7 +58,14 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
     let active = true
     const supabase = createClient()
 
-    async function load() {
+    /**
+     * Refetch + merge. Used by the initial load AND the mobile-survival
+     * fallbacks (visibilitychange + poll). Realtime websockets are silently
+     * suspended by iOS Safari and mobile Chrome when the tab backgrounds, so
+     * the only reliable way to keep chats fresh on phones is to recheck on
+     * focus and on a low-cost interval.
+     */
+    async function refresh() {
       try {
         const { data, error: loadError } = await supabase
           .from('messages')
@@ -67,9 +74,14 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
           .order('created_at', { ascending: true })
           .limit(50)
         if (loadError) throw loadError
-        if (active) {
-          setMessages((data ?? []).filter((m) => !(m as { is_deleted?: boolean }).is_deleted))
-        }
+        if (!active) return
+        const fresh = (data ?? []).filter((m) => !(m as { is_deleted?: boolean }).is_deleted)
+        setMessages((prev) => {
+          if (prev.length === 0) return fresh as Array<Record<string, unknown>>
+          const ids = new Set(prev.map((m) => m.id))
+          const additions = (fresh as Array<Record<string, unknown>>).filter((m) => !ids.has(m.id))
+          return additions.length === 0 ? prev : [...prev, ...additions]
+        })
       } catch (err) {
         console.error('dm chat: load failed —', err)
         if (active) setError('could not load messages')
@@ -77,7 +89,7 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
         if (active) setLoaded(true)
       }
     }
-    load()
+    refresh()
 
     const channel = supabase
       .channel(`dm-${tid}`)
@@ -92,8 +104,21 @@ export default function DmChat({ threadId, currentUserId, otherUser }: Props) {
       )
       .subscribe()
 
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+
+    const pollId = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh()
+    }, 5000)
+
     return () => {
       active = false
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+      window.clearInterval(pollId)
       supabase.removeChannel(channel)
     }
   }, [threadId])
