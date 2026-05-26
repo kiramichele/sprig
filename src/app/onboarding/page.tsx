@@ -14,9 +14,13 @@ export default async function OnboardingPage() {
   // serverless function doesn't terminate the request before the send.
   await trySendWelcomeEmail(supabase)
 
-  const profileRes = await supabase
+  // availability_slots is added by a recent migration; the generated DB
+  // types haven't been regenerated, so we read through a narrow cast.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb: any = supabase
+  const profileRes = await sb
     .from('profiles')
-    .select('id, username, photo_url, onboarding_completed')
+    .select('id, username, photo_url, onboarding_completed, availability_slots')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -49,6 +53,9 @@ export default async function OnboardingPage() {
     redirect('/home')
   }
 
+  const availabilityCount =
+    (profile?.availability_slots as string[] | null | undefined)?.length ?? 0
+
   const initialStep = !profile || !profile.username
     ? 1
     : interestsCount < 3
@@ -57,7 +64,9 @@ export default async function OnboardingPage() {
         ? 3
         : sensoryRes.data == null
           ? 4
-          : 5
+          : availabilityCount === 0
+            ? 5
+            : 6
 
   return (
     <main className="min-h-screen px-4 py-6 sm:p-8" style={{ background: '#FFF6E5' }}>

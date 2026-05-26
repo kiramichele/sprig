@@ -163,7 +163,7 @@ export default function Step5Photo({ userId, onComplete }: Props) {
   return (
     <div>
       <div className="mb-8">
-        <div className="display text-2xl sm:text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 5: photo</div>
+        <div className="display text-2xl sm:text-4xl mb-2" style={{ color: '#1F1A3D' }}>step 6: photo</div>
         <p className="text-sm opacity-80" style={{ color: '#1F1A3D' }}>
           an optional photo helps people feel more comfortable before they match with you.
         </p>

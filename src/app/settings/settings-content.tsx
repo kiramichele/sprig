@@ -7,7 +7,9 @@ import FriendshipStyleSection from './sections/friendship-style'
 import SensoryPrefsSection from './sections/sensory-prefs'
 import NotificationsSection from './sections/notifications'
 import TimezoneSection from './sections/timezone'
+import AvailabilitySection from './sections/availability'
 import AccountSection from './sections/account'
+import type { SlotToken } from '@/lib/availability/slots'
 
 interface CatalogInterest {
   id: string
@@ -29,6 +31,7 @@ interface ProfileShape {
   city: string | null
   photo_url: string | null
   timezone?: string | null
+  availability_slots?: SlotToken[] | null
 }
 
 interface FriendshipStyleShape {
@@ -106,6 +109,10 @@ export default function SettingsContent({
           <FriendshipStyleSection userId={userId} initial={friendshipStyle} />
           <SensoryPrefsSection userId={userId} initial={sensoryPrefs} />
           <TimezoneSection userId={userId} initial={profile?.timezone ?? null} />
+          <AvailabilitySection
+            userId={userId}
+            initial={(profile?.availability_slots as SlotToken[] | null) ?? null}
+          />
           <NotificationsSection userId={userId} initial={notificationPrefs} />
           <AccountSection userId={userId} userEmail={userEmail} />
         </div>

@@ -5,25 +5,31 @@ import Step1Basics from './step-1-basics'
 import Step2Interests from './step-2-interests'
 import Step3Style from './step-3-style'
 import Step4Sensory from './step-4-sensory'
-import Step5Photo from './step-5-photo'
+import StepAvailability from './step-availability'
+// step-5-photo.tsx kept its original filename to minimize churn; it's now
+// rendered at index 6 (the final step).
+import StepPhoto from './step-5-photo'
 
 type Props = {
   userId: string
   initialStep: number
 }
 
+const TOTAL_STEPS = 6
+
 const stepTitles = [
   'basics',
   'interests',
   'friendship style',
   'sensory preferences',
+  'availability',
   'photo',
 ]
 
 export default function OnboardingWizard({ userId, initialStep }: Props) {
   const [currentStep, setCurrentStep] = useState(initialStep)
 
-  const activeIndex = Math.max(1, Math.min(5, currentStep))
+  const activeIndex = Math.max(1, Math.min(TOTAL_STEPS, currentStep))
   const StepComponent = useMemo(() => {
     switch (activeIndex) {
       case 1:
@@ -35,14 +41,16 @@ export default function OnboardingWizard({ userId, initialStep }: Props) {
       case 4:
         return Step4Sensory
       case 5:
-        return Step5Photo
+        return StepAvailability
+      case 6:
+        return StepPhoto
       default:
         return Step1Basics
     }
   }, [activeIndex])
 
   const onComplete = () => {
-    setCurrentStep((prev) => Math.min(5, prev + 1))
+    setCurrentStep((prev) => Math.min(TOTAL_STEPS, prev + 1))
   }
 
   return (
@@ -65,7 +73,7 @@ export default function OnboardingWizard({ userId, initialStep }: Props) {
 
       {/* Step indicator — numbered dots only on mobile (labels hidden); full
           numbered + labeled grid on sm+ to keep the wizard readable on phones */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3 mb-8 sm:mb-10">
+      <div className="grid grid-cols-6 gap-2 sm:gap-3 mb-8 sm:mb-10">
         {stepTitles.map((title, index) => {
           const step = index + 1
           const isActive = step === activeIndex

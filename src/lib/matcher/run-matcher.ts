@@ -2,6 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendNotificationEmail, appUrl } from '@/lib/email/send'
 import PodMatchedEmail from '@/lib/email/templates/pod-matched'
+import {
+  intersectSlots,
+  soonestUpcoming,
+  type SlotToken,
+} from '@/lib/availability/slots'
 import { formPods } from './algorithm'
 import type { MatcherDatabase, MatcherResult, Pair, Pod, PoolUser } from './types'
 
@@ -187,7 +192,50 @@ export async function runMatcher(): Promise<MatcherResult> {
     interestIdByName.set(interest.name, interest.id)
   }
 
-  const firstSessionAt = nextSaturday7pmEastern().toISOString()
+  // 4b. Bulk-fetch availability slots + timezone for every pool profile so
+  //     we can pick a first-session time per pod that everyone can make.
+  //     Falls back to the global Sat 7pm ET when no overlap is found.
+  const fallbackFirstSessionAt = nextSaturday7pmEastern().toISOString()
+  const slotsByProfile = new Map<string, SlotToken[]>()
+  const tzByProfile = new Map<string, string | null>()
+  {
+    const profileIds = [...new Set(pool.map((u) => u.profile_id))]
+    if (profileIds.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dbAny: any = db
+      const { data: profileRows, error: profErr } = await dbAny
+        .from('profiles')
+        .select('id, availability_slots, timezone')
+        .in('id', profileIds)
+      if (profErr) {
+        console.error('runMatcher: failed to read profile availability —', profErr)
+      }
+      for (const p of (profileRows as Array<{
+        id: string
+        availability_slots: string[] | null
+        timezone: string | null
+      }> | null) || []) {
+        slotsByProfile.set(p.id, (p.availability_slots as SlotToken[] | null) ?? [])
+        tzByProfile.set(p.id, p.timezone ?? null)
+      }
+    }
+  }
+
+  /** Compute the first-session time for a single pod from its members'
+   *  picked availability slots. Returns the fallback if no overlap. */
+  function podFirstSessionAt(memberIds: string[]): string {
+    const perMember = memberIds.map((id) => slotsByProfile.get(id) ?? [])
+    const common = intersectSlots(perMember)
+    if (common.length === 0) return fallbackFirstSessionAt
+    // Use the lexicographically-first timezone among members for determinism.
+    // (Picking a "median" timezone is overkill — they're usually adjacent.)
+    const zones = memberIds
+      .map((id) => tzByProfile.get(id) ?? 'America/New_York')
+      .sort()
+    const anchorTz = zones[0] || 'America/New_York'
+    const pick = soonestUpcoming(common, anchorTz)
+    return pick ? pick.at.toISOString() : fallbackFirstSessionAt
+  }
 
   const matchedProfileIds = new Set<string>()
   const writtenPods: Pod[] = []
@@ -223,6 +271,7 @@ export async function runMatcher(): Promise<MatcherResult> {
       const { error: memberError } = await db.from('pod_members').insert(memberRows)
       if (memberError) throw memberError
 
+      const firstSessionAt = podFirstSessionAt(pod.members)
       const { error: sessionError } = await db.from('pod_sessions').insert({
         pod_id: createdPodId,
         scheduled_for: firstSessionAt,
